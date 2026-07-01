@@ -1,0 +1,38 @@
+    button_frame,
+        text="ナビ子メニュー",
+        padx=4,
+        pady=4
+    )
+    gui_v2_frame.pack(fill="x", padx=4, pady=4)
+
+    menu_frame = tk.Frame(gui_v2_frame)
+    menu_frame.pack(fill="x", padx=2, pady=2)
+
+    action_frame = tk.Frame(gui_v2_frame, height=160)
+    action_frame.pack(fill="x", padx=2, pady=2)
+    action_frame.pack_propagate(False)
+
+    categories = [
+        "Build",
+        "Reflection",
+        "Agent",
+        "LAB",
+        "Dashboard"
+    ]
+
+    for category in categories:
+        tk.Button(
+            menu_frame,
+            text=category,
+            command=lambda c=category: show_gui_menu_category(
+                c,
+                action_frame,
+                custom_chat_log if "custom_chat_log" in globals() else None
+            )
+        ).pack(side="left", padx=2, pady=2)
+
+    show_gui_menu_category(
+        "Build",
+        action_frame,
+        custom_chat_log if "custom_chat_log" in globals() else None
+    )

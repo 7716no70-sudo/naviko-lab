@@ -1,0 +1,3 @@
+"""
+navikoLAB.analyzers module
+"""

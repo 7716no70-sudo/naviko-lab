@@ -1,0 +1,9 @@
+=== ナビ子・成長傾向分析 ===
+直近分析数: 5
+平均trust: 13.0
+平均attachment: 13.0
+平均fatigue: 21.0
+mood履歴: happy, happy, happy, happy, happy
+
+=== ナビ子の自己提案 ===
+・最近happyが多いです。嬉しい時のアニメや独り言を増やしたいです。

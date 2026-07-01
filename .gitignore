@@ -1,0 +1,60 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Naviko LAB specific
+backup/
+navikoLAB/patch_suggestions/
+navikoLAB/approved_patches/
+navikoLAB/rejected_patches/
+navikoLAB/line_patches/
+navikoLAB/line_patch_previews/
+navikoLAB/line_patch_temp_applied/
+navikoLAB/approved_line_patches/
+navikoLAB/pending_line_patches/
+navikoLAB/llm_history/
+navikoLAB/agent_execution_history/
+navikoLAB/autonomous_builds/
+navikoLAB/reports/
+
+# Memory and logs
+*.json
+!navikoLAB/**/requirements.json
+
+# Images
+*.webp
+*.png
+*.jpg
+*.jpeg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*backup*.py
+*.old
+backups/
+.git.old/
+
+
+# Backup files
+*backup*.py
+*.old
+backups/
+.git.old/

@@ -1,0 +1,74 @@
+改善案は以下のとおりです。
+
+1. **Groqの413 Payload Too Largeを避ける**
+ * `call_groq`関数の引数に`max_size`オプションを追加し、最大サイズを指定する。
+ * `call_groq`関数の内部で、受け取ったデータを最大サイズ以下に圧縮する。
+2. **自己分析機能を軽量化する**
+ * `analyze_self_status`関数を削除し、代わりに`analyze_growth_trend`関数を呼び出す。
+ * `analyze_growth_trend`関数を簡略化し、必要な情報のみを取得する。
+3. **成長提案を短く実用的にする**
+ * `advance_growth_goal`関数を削除し、代わりに`add_memory`関数を呼び出す。
+ * `add_memory`関数を簡略化し、必要な情報のみを取得する。
+4. **危険な自動実行や勝手な削除をしない**
+ * `call_groq`関数の内部で、受け取ったデータを安全に処理する。
+
+改善したコードは以下のようになります。
+
+```python
+def build_system_prompt():
+    # ...
+
+    prompt = f"""
+ナビ子の自己成長機能を改善してください。
+
+目的:
+- Groqの413 Payload Too Largeを避ける
+- 自己分析機能を軽量化する
+- 成長提案を短く実用的にする
+- 危険な自動実行や勝手な削除をしない
+
+内部経験:
+{summarize_experience()}
+
+現在の性格値:
+- 慎重さ: {profile.get("traits", {}).get("cautious", 0)}
+- 温かさ: {profile.get("traits", {}).get("warmth", 0)}
+
+現在の重要コード:
+{focused_code}
+
+出力ルール:
+- 変更案は3つまで
+- 理由は短く
+- 具体的な修正コードがある場合だけコードを出す
+- 長文にしない
+"""
+
+def call_groq(prompt, max_size=10000):
+    # ...
+    if len(data) > max_size:
+        data = compress_data(data)
+    # ...
+
+def analyze_growth_trend():
+    # ...
+    # 必要な情報のみを取得する
+    return {"growth_trend": "..."}
+
+def advance_growth_goal():
+    # ...
+    # 必要な情報のみを取得する
+    return {"growth_goal": "..."}
+
+def add_memory():
+    # ...
+    # 必要な情報のみを取得する
+    return {"memory": "..."}
+
+def compress_data(data):
+    # ...
+    # データを最大サイズ以下に圧縮する
+    return compressed_data
+```
+
+これらの改善により、ナビ子の自己成長機能は安全で軽量になり、成長提案は短く実用的なものになります。

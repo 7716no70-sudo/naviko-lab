@@ -1,0 +1,6 @@
+{"timestamp": "2026-06-26 19:29:21", "prompt_preview": "ナビ子LABのClaude Connector接続テストです。短く返答してください。", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:33:13", "prompt_preview": "Claude Dispatcher接続テスト", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:45:15", "prompt_preview": "claude 正式Connector Dispatcher診断テスト", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:59:14", "prompt_preview": "claude 正式Connector Dispatcher診断テスト", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 22:41:11", "prompt_preview": "claude 正式Connector Dispatcher診断テスト", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 23:02:16", "prompt_preview": "ナビ子LABのClaude Connector接続テストです。短く返答してください。", "result": {"connector": "claude", "status": "skipped", "reason": "ANTHROPIC_API_KEY is not configured.", "output": ""}}

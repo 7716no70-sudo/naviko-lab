@@ -1,0 +1,3 @@
+"""
+navikoLAB.capabilities module
+"""

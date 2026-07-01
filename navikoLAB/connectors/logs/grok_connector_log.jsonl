@@ -1,0 +1,6 @@
+{"timestamp": "2026-06-26 19:40:20", "prompt_preview": "ナビ子LABのGrok Connector接続テストです。短く返答してください。", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:43:02", "prompt_preview": "Grok Dispatcher接続テスト", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:45:15", "prompt_preview": "grok 正式Connector Dispatcher診断テスト", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:59:14", "prompt_preview": "grok 正式Connector Dispatcher診断テスト", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 22:41:11", "prompt_preview": "grok 正式Connector Dispatcher診断テスト", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 23:07:01", "connector": "grok", "prompt_preview": "ナビ子LABのGrok Connector接続テストです。短く返答してください。", "result": {"connector": "grok", "status": "skipped", "reason": "XAI_API_KEY is not configured.", "output": ""}}

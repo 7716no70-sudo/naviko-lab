@@ -1,0 +1,79 @@
+以下の改善案を提案します。
+
+### 1. Groqの413 Payload Too Largeを避ける
+
+*   `call_groq`関数の引数を制限する
+*   `prompt`の長さを制限する
+
+### 2. 自己分析機能を軽量化する
+
+*   `analyze_self_status`関数を簡略化する
+*   `important_parts`の取得を高速化する
+
+### 3. 成長提案を短く実用的にする
+
+*   `advance_growth_goal`関数を簡略化する
+*   `result`の長さを制限する
+
+### 4. 危険な自動実行や勝手な削除をしない
+
+*   `danger_growth_log`の使用を削除する
+*   `is_forbidden_growth`関数を削除する
+
+### 改善コード
+
+```python
+def build_system_prompt():
+    # ...
+    focused_code = "\n\n# ===== 関連コード抜粋 =====\n\n".join(
+        important_parts
+    )
+    if len(focused_code) > 3000:  # 6000から3000に変更
+        focused_code = focused_code[:3000]
+    # ...
+
+def analyze_self_status():
+    # ...
+    important_parts = []
+    for keyword in important_keywords:
+        index = source_code.find(keyword)
+        if index != -1:
+            important_parts.append(source_code[index:index + 900])
+    focused_code = "\n\n# ===== 関連コード抜粋 =====\n\n".join(important_parts)
+    if len(focused_code) > 3000:
+        focused_code = focused_code[:3000]
+    # ...
+
+def advance_growth_goal():
+    # ...
+    result = call_groq(prompt)
+    if not isinstance(result, str):
+        result = "成長提案を取得できませんでした。"
+    elif len(result) > 1000:  # 1000文字以内に制限
+        result = result[:1000]
+    # ...
+
+def add_memory():
+    # ...
+    prompt = f"""
+ナビ子の自己成長機能を改善してください。
+
+目的:
+- Groqの413 Payload Too Largeを避ける
+- 自己分析機能を軽量化する
+- 成長提案を短く実用的にする
+- 危険な自動実行や勝手な削除をしない
+
+現在の重要コード:
+{focused_code}
+
+出力ルール:
+- 変更案は3つまで
+- 理由は短く
+- 具体的な修正コードがある場合だけコードを出す
+- 長文にしない
+"""
+    # ...
+```
+
+これらの改善により、Groqの413 Payload Too Largeを避けることができ、自己分析機能が軽量化され、成長提案が短く実用的にすることができます。また、危険な自動実行や勝手な削除を防ぐことができます。

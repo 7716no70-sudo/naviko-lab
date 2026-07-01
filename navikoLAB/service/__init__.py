@@ -1,0 +1,3 @@
+"""
+navikoLAB.service module
+"""

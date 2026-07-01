@@ -1,0 +1,1 @@
+{"timestamp": "2026-06-26 23:04:51", "connector": "dummy_ai", "prompt_preview": "dummy prompt", "result": {"connector": "dummy_ai", "status": "skipped", "reason": "DUMMY_API_KEY API key is not configured.", "output": ""}}

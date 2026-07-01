@@ -1,0 +1,6 @@
+{"timestamp": "2026-06-26 19:35:24", "prompt_preview": "ナビ子LABのGemini Connector接続テストです。短く返答してください。", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:38:21", "prompt_preview": "Gemini Dispatcher接続テスト", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:45:15", "prompt_preview": "gemini 正式Connector Dispatcher診断テスト", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 19:59:14", "prompt_preview": "gemini 正式Connector Dispatcher診断テスト", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 22:41:11", "prompt_preview": "gemini 正式Connector Dispatcher診断テスト", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY が未設定です。", "output": ""}}
+{"timestamp": "2026-06-26 23:06:05", "connector": "gemini", "prompt_preview": "ナビ子LABのGemini Connector接続テストです。短く返答してください。", "result": {"connector": "gemini", "status": "skipped", "reason": "GEMINI_API_KEY is not configured.", "output": ""}}

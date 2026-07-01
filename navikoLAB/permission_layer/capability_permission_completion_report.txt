@@ -1,0 +1,21 @@
+=== Capability Permission Completion Report ===
+status: completed
+phase: Phase86-3 Capability Permission Completion Report
+CapabilitySystemFound: True
+DiagnosticsFound: True
+CapabilitySystemCompleted: True
+DiagnosticsCompleted: True
+CapabilityPermissionSystemCreated: True
+CapabilityPermissionDiagnosticsPassed: True
+AllowedCapabilityPolicyOK: True
+ApprovalCapabilityPolicyOK: True
+DeniedCapabilityPolicyOK: True
+DefaultCapabilityPolicyOK: True
+CapabilitySystemSummaryOK: True
+CapabilityPermissionCompletionConfirmed: True
+HumanApproved: False
+Mode: dry_run
+RiskCount: 0
+SafeToContinue: True
+NextPhase: Phase87 External AI Permission Router
+保存先: C:\Users\7716n\OneDrive\デスクトップ\naviko_lab\navikoLAB\permission_layer\reports\capability_permission_completion_report_20260629_153822.json
