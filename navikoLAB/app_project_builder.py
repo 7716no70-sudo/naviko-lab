@@ -1,349 +1,557 @@
+# -*- coding: utf-8 -*-
+"""
+AppProjectBuilder - アプリケーションプロジェクトビルダー (LLM統合版)
+
+LLMConnectorを統合し、AIパワード生成でアプリプロジェクトを構築します。
+テンプレートベースの生成からAI生成へ移行し、より高品質な成果物を生成します。
+
+機能:
+- LLM駆動のmain.py生成
+- LLM駆動のREADME.md生成
+- 自動フォールバック（LLM利用不可時）
+- 実行履歴の保存
+- 診断情報の提供
+
+作成日: 2026-07-01
+LLM統合: 完了
+"""
+
+import os
 import json
+import time
 from pathlib import Path
-from datetime import datetime
+from typing import Dict, List, Optional, Any
+
+# LLMConnectorのインポート
+try:
+    from .llm_connector import LLMConnector
+    LLM_AVAILABLE = True
+except ImportError:
+    LLM_AVAILABLE = False
+    LLMConnector = None
 
 
 class AppProjectBuilder:
+    """
+    アプリケーションプロジェクトビルダー（LLM統合版）
+    
+    Attributes:
+        lab_dir (Path): LABディレクトリ
+        llm_connector (LLMConnector): LLM接続
+        action_planner: アクションプランナー
+        workspace_manager: ワークスペースマネージャー
+        artifact_writer: アーティファクトライター
+        history_dir (Path): 履歴保存ディレクトリ
+        stats (Dict): 統計情報
+    """
+    
     def __init__(
         self,
-        root_dir,
+        lab_dir: Path,
         action_planner=None,
         workspace_manager=None,
-        artifact_writer=None
+        artifact_writer=None,
+        api_key: Optional[str] = None
     ):
-        self.root = Path(root_dir)
-
+        """
+        初期化
+        
+        Args:
+            lab_dir: LABディレクトリのパス
+            action_planner: ActionPlannerインスタンス（オプション）
+            workspace_manager: WorkspaceManagerインスタンス（オプション）
+            artifact_writer: ArtifactWriterインスタンス（オプション）
+            api_key: Groq APIキー（オプション、環境変数からも取得可能）
+        """
+        self.lab_dir = Path(lab_dir)
         self.action_planner = action_planner
         self.workspace_manager = workspace_manager
         self.artifact_writer = artifact_writer
-
-        self.builder_dir = self.root / "builders"
-        self.builder_dir.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        self.builder_log_file = (
-            self.builder_dir /
-            "app_project_builder_log.json"
-        )
-
-        if not self.builder_log_file.exists():
-            self.builder_log_file.write_text(
-                "[]",
-                encoding="utf-8"
-            )
-
-    def _load_log(self):
-        try:
-            return json.loads(
-                self.builder_log_file.read_text(
-                    encoding="utf-8"
+        
+        # LLMConnectorの初期化
+        if LLM_AVAILABLE and LLMConnector is not None:
+            try:
+                self.llm_connector = LLMConnector(
+                    lab_dir=self.lab_dir,
+                    model="llama-3.1-8b-instant",
+                    api_key=api_key
                 )
+            except Exception as e:
+                print(f"Warning: LLMConnector initialization failed: {e}")
+                self.llm_connector = None
+        else:
+            self.llm_connector = None
+        
+        # 履歴保存ディレクトリ
+        self.history_dir = self.lab_dir / "builder_history"
+        self.history_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 統計情報
+        self.stats = {
+            "total_builds": 0,
+            "llm_builds": 0,
+            "template_builds": 0,
+            "successful_builds": 0,
+            "failed_builds": 0
+        }
+    
+    def build_basic_app_project(
+        self,
+        purpose: str,
+        project_name: str,
+        use_llm: bool = True
+    ) -> Dict[str, Any]:
+        """
+        基本的なアプリプロジェクトを構築
+        
+        Args:
+            purpose: プロジェクトの目的
+            project_name: プロジェクト名
+            use_llm: LLMを使用するかどうか（デフォルト: True）
+        
+        Returns:
+            Dict: ビルド結果
+                - success (bool): 成功したかどうか
+                - status (str): ステータス
+                - project_name (str): プロジェクト名
+                - project_path (str): プロジェクトパス
+                - mode (str): 使用したモード ("llm" or "template")
+                - files (List[str]): 作成されたファイル
+                - error (str, optional): エラーメッセージ
+        """
+        self.stats["total_builds"] += 1
+        start_time = time.time()
+        
+        try:
+            # プロジェクトフォルダ作成
+            if self.workspace_manager:
+                project = self.workspace_manager.create_project_folder(
+                    project_name,
+                    project_type="app"
+                )
+                project_dir = Path(project["project_dir"])
+            else:
+                # WorkspaceManagerがない場合は直接作成
+                project_dir = self.lab_dir / "projects" / project_name
+                project_dir.mkdir(parents=True, exist_ok=True)
+            
+            created_files = []
+            
+            # main.pyを生成
+            mode = "unknown"
+            if use_llm and self._is_llm_available():
+                main_code = self._generate_main_with_llm(purpose)
+                mode = "llm"
+                self.stats["llm_builds"] += 1
+            else:
+                main_code = self._generate_main_template(purpose)
+                mode = "template"
+                self.stats["template_builds"] += 1
+            
+            main_file = project_dir / "main.py"
+            main_file.write_text(main_code, encoding="utf-8")
+            created_files.append(str(main_file))
+            
+            # README.mdを生成
+            if use_llm and self._is_llm_available():
+                readme_content = self._generate_readme_with_llm(purpose, project_name)
+            else:
+                readme_content = self._generate_readme_template(purpose, project_name)
+            
+            readme_file = project_dir / "README.md"
+            readme_file.write_text(readme_content, encoding="utf-8")
+            created_files.append(str(readme_file))
+            
+            # requirements.txt を生成
+            requirements_content = self._generate_requirements(purpose)
+            requirements_file = project_dir / "requirements.txt"
+            requirements_file.write_text(requirements_content, encoding="utf-8")
+            created_files.append(str(requirements_file))
+            
+            # notes.txt を生成
+            notes_content = self._generate_notes(purpose, mode)
+            notes_file = project_dir / "notes.txt"
+            notes_file.write_text(notes_content, encoding="utf-8")
+            created_files.append(str(notes_file))
+            
+            elapsed_time = time.time() - start_time
+            
+            result = {
+                "success": True,
+                "status": "completed",
+                "project_name": project_name,
+                "project_path": str(project_dir),
+                "project_dir": str(project_dir),
+                "mode": mode,
+                "files": created_files,
+                "elapsed_time": elapsed_time,
+                "purpose": purpose
+            }
+            
+            self.stats["successful_builds"] += 1
+            
+            # 履歴保存
+            self._save_build_history(result)
+            
+            return result
+            
+        except Exception as e:
+            self.stats["failed_builds"] += 1
+            
+            error_result = {
+                "success": False,
+                "status": "failed",
+                "project_name": project_name,
+                "error": str(e),
+                "mode": "error"
+            }
+            
+            self._save_build_history(error_result)
+            
+            return error_result
+    
+    def _generate_main_with_llm(self, purpose: str) -> str:
+        """
+        LLMを使用してmain.pyを生成
+        
+        Args:
+            purpose: アプリケーションの目的
+        
+        Returns:
+            str: 生成されたコード
+        """
+        try:
+            result = self.llm_connector.generate_code(
+                purpose=f"Create a complete Python application for: {purpose}",
+                language="python",
+                context={
+                    "file_name": "main.py",
+                    "requirements": [
+                        "Clean and well-structured code",
+                        "Include proper error handling",
+                        "Add helpful comments in Japanese",
+                        "Make it production-ready",
+                        "Include a main() function",
+                        "Add if __name__ == '__main__': guard",
+                        "Write complete working code, not TODO placeholders"
+                    ]
+                },
+                temperature=0.7,
+                max_tokens=2000
             )
-        except Exception:
-            return []
-
-    def _save_log(self, data):
-        self.builder_log_file.write_text(
-            json.dumps(
-                data,
-                ensure_ascii=False,
-                indent=2
-            ),
-            encoding="utf-8"
-        )
-
-    def should_generate_gui_app(self, purpose):
-        text = str(purpose).lower()
-
-        gui_keywords = [
-            "gui",
-            "tkinter",
-            "画面",
-            "ボタン",
-            "ウィンドウ",
-            "main.py にgui要素が少ない",
-            "gui要素が少ない",
-            "gui要素"
-        ]
-
-        for keyword in gui_keywords:
-            if keyword in text:
-                return True
-
-        return False
-
-
-    def create_gui_main_py_content(self, purpose):
-        return f'''import tkinter as tk
-from tkinter import messagebox
-
-
-class TodoApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("TODOアプリ")
-        self.root.geometry("420x420")
-
-        self.todos = []
-
-        self.title_label = tk.Label(
-            root,
-            text="TODOアプリ",
-            font=("Meiryo", 16, "bold")
-        )
-        self.title_label.pack(pady=10)
-
-        self.entry = tk.Entry(
-            root,
-            font=("Meiryo", 11)
-        )
-        self.entry.pack(fill="x", padx=20, pady=5)
-
-        self.add_button = tk.Button(
-            root,
-            text="追加",
-            command=self.add_todo
-        )
-        self.add_button.pack(fill="x", padx=20, pady=5)
-
-        self.delete_button = tk.Button(
-            root,
-            text="選択したTODOを削除",
-            command=self.delete_todo
-        )
-        self.delete_button.pack(fill="x", padx=20, pady=5)
-
-        self.listbox = tk.Listbox(
-            root,
-            font=("Meiryo", 11)
-        )
-        self.listbox.pack(fill="both", expand=True, padx=20, pady=10)
-
-        self.status_label = tk.Label(
-            root,
-            text="TODOを入力して追加してください。",
-            anchor="w"
-        )
-        self.status_label.pack(fill="x", padx=20, pady=5)
-
-    def add_todo(self):
-        text = self.entry.get().strip()
-
-        if not text:
-            messagebox.showwarning(
-                "入力エラー",
-                "TODOを入力してください。"
+            
+            if result["success"]:
+                return result["code"]
+            else:
+                # LLM失敗時はテンプレートにフォールバック
+                print(f"LLM generation failed: {result.get('error', 'Unknown error')}")
+                return self._generate_main_template(purpose)
+                
+        except Exception as e:
+            print(f"Error in LLM generation: {e}")
+            return self._generate_main_template(purpose)
+    
+    def _generate_readme_with_llm(self, purpose: str, project_name: str) -> str:
+        """
+        LLMを使用してREADME.mdを生成
+        
+        Args:
+            purpose: プロジェクトの目的
+            project_name: プロジェクト名
+        
+        Returns:
+            str: 生成されたREADME内容
+        """
+        try:
+            result = self.llm_connector.generate_code(
+                purpose=f"Create a professional README.md in Japanese for a project: {project_name}. Purpose: {purpose}",
+                language="markdown",
+                context={
+                    "project_name": project_name,
+                    "purpose": purpose,
+                    "sections": [
+                        "Title",
+                        "Purpose (目的)",
+                        "Features (機能)",
+                        "Installation (インストール)",
+                        "Usage (使い方)",
+                        "Requirements (必要な環境)"
+                    ]
+                },
+                temperature=0.5,
+                max_tokens=1000
             )
-            return
+            
+            if result["success"]:
+                return result["code"]
+            else:
+                return self._generate_readme_template(purpose, project_name)
+                
+        except Exception as e:
+            print(f"Error in README generation: {e}")
+            return self._generate_readme_template(purpose, project_name)
+    
+    def _generate_main_template(self, purpose: str) -> str:
+        """
+        テンプレートからmain.pyを生成（フォールバック）
+        
+        Args:
+            purpose: アプリケーションの目的
+        
+        Returns:
+            str: テンプレートコード
+        """
+        return f'''# -*- coding: utf-8 -*-
+"""
+{purpose}
 
-        self.todos.append(text)
-        self.listbox.insert(tk.END, text)
-        self.entry.delete(0, tk.END)
-        self.status_label.config(
-            text=f"追加しました: {{text}}"
-        )
-
-    def delete_todo(self):
-        selected = self.listbox.curselection()
-
-        if not selected:
-            messagebox.showinfo(
-                "選択なし",
-                "削除するTODOを選択してください。"
-            )
-            return
-
-        index = selected[0]
-        deleted = self.todos.pop(index)
-        self.listbox.delete(index)
-        self.status_label.config(
-            text=f"削除しました: {{deleted}}"
-        )
-
+NOTE: これは基本テンプレートです。
+実際の機能を実装してください。
+"""
 
 def main():
-    root = tk.Tk()
-    app = TodoApp(root)
-    root.mainloop()
-
+    """メイン関数"""
+    print("TODO: {purpose} の実装")
+    # ここに実装を追加
+    pass
 
 if __name__ == "__main__":
     main()
 '''
+    
+    def _generate_readme_template(self, purpose: str, project_name: str) -> str:
+        """
+        テンプレートからREADME.mdを生成（フォールバック）
+        
+        Args:
+            purpose: プロジェクトの目的
+            project_name: プロジェクト名
+        
+        Returns:
+            str: テンプレートREADME
+        """
+        return f"""# {project_name}
 
-    def build_basic_app_project(
-        self,
-        purpose,
-        project_name="naviko_app_project"
-    ):
-        result = {
-            "created_at":
-                datetime.now().isoformat(
-                    timespec="seconds"
-                ),
-            "purpose": purpose,
-            "project_name": project_name,
-            "action_plan": None,
-            "project": None,
-            "files": [],
-            "status": "started",
-            "messages": []
+## 目的
+
+{purpose}
+
+## 機能
+
+- 基本的な機能（未実装）
+
+## インストール
+
+```bash
+pip install -r requirements.txt
+```
+
+## 使い方
+
+```bash
+python main.py
+```
+
+## 必要な環境
+
+- Python 3.7以上
+"""
+    
+    def _generate_requirements(self, purpose: str) -> str:
+        """
+        requirements.txt を生成
+        
+        Args:
+            purpose: プロジェクトの目的
+        
+        Returns:
+            str: requirements.txt の内容
+        """
+        # 基本的な依存関係
+        requirements = []
+        
+        purpose_lower = purpose.lower()
+        
+        # 目的に応じて依存関係を追加
+        if "gui" in purpose_lower or "tkinter" in purpose_lower or "画面" in purpose_lower:
+            # tkinterは標準ライブラリなので不要
+            pass
+        
+        if "web" in purpose_lower or "flask" in purpose_lower or "django" in purpose_lower:
+            requirements.append("flask>=2.0.0")
+        
+        if "データ" in purpose_lower or "data" in purpose_lower:
+            requirements.append("pandas>=1.3.0")
+            requirements.append("numpy>=1.21.0")
+        
+        if "グラフ" in purpose_lower or "可視化" in purpose_lower or "plot" in purpose_lower:
+            requirements.append("matplotlib>=3.4.0")
+        
+        # 基本的な依存関係がない場合
+        if not requirements:
+            requirements.append("# No specific requirements")
+            requirements.append("# Add your dependencies here")
+        
+        return "\n".join(requirements) + "\n"
+    
+    def _generate_notes(self, purpose: str, mode: str) -> str:
+        """
+        notes.txt を生成
+        
+        Args:
+            purpose: プロジェクトの目的
+            mode: 生成モード
+        
+        Returns:
+            str: notes.txt の内容
+        """
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        return f"""プロジェクト生成メモ
+
+生成日時: {timestamp}
+生成モード: {mode}
+目的: {purpose}
+
+次のステップ:
+1. main.py の実装を確認
+2. 必要に応じて依存関係を追加
+3. テストを実行
+4. ドキュメントを更新
+
+生成方式:
+{'- LLM (Groq AI) を使用して生成' if mode == 'llm' else '- テンプレートベースで生成'}
+"""
+    
+    def _is_llm_available(self) -> bool:
+        """
+        LLMが利用可能かチェック
+        
+        Returns:
+            bool: 利用可能な場合True
+        """
+        return (
+            self.llm_connector is not None 
+            and hasattr(self.llm_connector, 'is_available')
+            and self.llm_connector.is_available()
+        )
+    
+    def _save_build_history(self, result: Dict[str, Any]) -> Path:
+        """
+        ビルド履歴を保存
+        
+        Args:
+            result: ビルド結果
+        
+        Returns:
+            Path: 保存先ファイルパス
+        """
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        history_file = self.history_dir / f"build_{timestamp}.json"
+        
+        history_data = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "result": result,
+            "stats": self.stats.copy()
         }
-
-        if not self.action_planner:
-            result["status"] = "failed"
-            result["messages"].append(
-                "ActionPlanner が接続されていません。"
-            )
-            self._append_log(result)
-            return result
-
-        if not self.workspace_manager:
-            result["status"] = "failed"
-            result["messages"].append(
-                "WorkspaceManager が接続されていません。"
-            )
-            self._append_log(result)
-            return result
-
-        if not self.artifact_writer:
-            result["status"] = "failed"
-            result["messages"].append(
-                "ArtifactWriter が接続されていません。"
-            )
-            self._append_log(result)
-            return result
-
-        action_plan = self.action_planner.create_action_plan(
-            purpose
+        
+        with open(history_file, 'w', encoding='utf-8') as f:
+            json.dump(history_data, f, ensure_ascii=False, indent=2)
+        
+        return history_file
+    
+    def diagnose_builder(self) -> Dict[str, Any]:
+        """
+        ビルダーの診断情報を取得
+        
+        Returns:
+            Dict: 診断情報
+                - llm_available (bool): LLMが利用可能か
+                - llm_status (str): LLMの状態
+                - stats (Dict): 統計情報
+                - history_count (int): 履歴件数
+                - latest_build (Dict, optional): 最新のビルド情報
+        """
+        # 最新のビルド履歴を取得
+        history_files = sorted(
+            self.history_dir.glob("build_*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
         )
-
-        result["action_plan"] = action_plan
-        result["messages"].append(
-            "具体的作業を作成しました。"
-        )
-
-        project = self.workspace_manager.create_project_folder(
-            project_name,
-            project_type="app"
-        )
-
-        result["project"] = project
-        result["messages"].append(
-            "プロジェクトフォルダを作成しました。"
-        )
-
-        files = self.artifact_writer.create_basic_app_files(
-            project["project_dir"],
-            app_name=project_name
-        )
-
-        if self.should_generate_gui_app(purpose):
-            project_dir = Path(project["project_dir"])
-            main_file = project_dir / "main.py"
-
-            main_file.write_text(
-                self.create_gui_main_py_content(purpose),
-                encoding="utf-8"
-            )
-
-            result["messages"].append(
-                "改善要求によりGUI版main.pyを生成しました。"
-            )
-
-        result["files"] = files
-        result["messages"].append(
-            "初期ファイルを作成しました。"
-        )
-
-        result["status"] = "completed"
-
-        self._append_log(result)
-        return result
-
-    def _append_log(self, result):
-        log = self._load_log()
-        log.append(result)
-        self._save_log(log)
-
-    def diagnose_builder(self):
-        log = self._load_log()
-
-        completed = 0
-        failed = 0
-
-        for item in log:
-            if item.get("status") == "completed":
-                completed += 1
-            elif item.get("status") == "failed":
-                failed += 1
-
+        
+        latest_build = None
+        if history_files:
+            try:
+                with open(history_files[0], 'r', encoding='utf-8') as f:
+                    latest_build = json.load(f)
+            except Exception:
+                pass
+        
+        llm_available = self._is_llm_available()
+        
         return {
-            "builder_log_count": len(log),
-            "completed_count": completed,
-            "failed_count": failed,
-            "builder_log_file":
-                str(self.builder_log_file),
-            "action_planner_connected":
-                self.action_planner is not None,
-            "workspace_manager_connected":
-                self.workspace_manager is not None,
-            "artifact_writer_connected":
-                self.artifact_writer is not None
+            "llm_available": llm_available,
+            "llm_status": "available" if llm_available else "unavailable",
+            "stats": self.stats.copy(),
+            "history_count": len(history_files),
+            "latest_build": latest_build,
+            "history_dir": str(self.history_dir)
         }
-
-    def format_build_result(self, result):
-        lines = []
-
-        lines.append(
-            "=== ナビ子 v1.3 AppProjectBuilder ==="
-        )
-
-        lines.append(
-            f"目的: {result.get('purpose')}"
-        )
-
-        lines.append(
-            f"状態: {result.get('status')}"
-        )
-
-        lines.append("")
-
-        lines.append("メッセージ:")
-        for msg in result.get("messages", []):
-            lines.append(f"- {msg}")
-
-        project = result.get("project")
-        if project:
+    
+    def format_build_result(self, result: Dict[str, Any]) -> str:
+        """
+        ビルド結果を見やすい文字列に整形
+        
+        Args:
+            result: ビルド結果
+        
+        Returns:
+            str: 整形された結果
+        """
+        lines = ["=== AppProjectBuilder Result ==="]
+        
+        if result.get("success"):
+            lines.append(f"Status: {result['status']}")
+            lines.append(f"Project: {result['project_name']}")
+            lines.append(f"Path: {result['project_path']}")
+            lines.append(f"Mode: {result['mode']}")
+            lines.append(f"Elapsed: {result.get('elapsed_time', 0):.2f}s")
             lines.append("")
-            lines.append(
-                f"プロジェクト: {project.get('project_name')}"
-            )
-            lines.append(
-                f"保存先: {project.get('project_dir')}"
-            )
-
-        action_plan = result.get("action_plan")
-        if action_plan:
-            lines.append("")
-            lines.append("具体的作業:")
-            for i, action in enumerate(
-                action_plan.get("actions", []),
-                start=1
-            ):
-                lines.append(
-                    f"{i}. {action}"
-                )
-
-        files = result.get("files", [])
-        if files:
-            lines.append("")
-            lines.append("作成ファイル:")
-            for item in files:
-                lines.append(
-                    f"- {item.get('file')}"
-                )
-
+            lines.append("Created Files:")
+            for file_path in result.get("files", []):
+                lines.append(f"  - {file_path}")
+        else:
+            lines.append(f"Status: {result['status']}")
+            lines.append(f"Error: {result.get('error', 'Unknown error')}")
+        
         return "\n".join(lines)
+    
+    def list_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        ビルド履歴を取得
+        
+        Args:
+            limit: 取得する履歴の最大件数
+        
+        Returns:
+            List[Dict]: ビルド履歴のリスト
+        """
+        history_files = sorted(
+            self.history_dir.glob("build_*.json"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )[:limit]
+        
+        histories = []
+        for file_path in history_files:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    histories.append({
+                        "file": file_path.name,
+                        "data": data
+                    })
+            except Exception as e:
+                print(f"Error loading history {file_path}: {e}")
+        
+        return histories
