@@ -46,6 +46,9 @@ from navikoLAB.improvement_manager import ImprovementManager
 from navikoLAB.core.mission_bridge import MissionBridge
 from navikoLAB.capabilities.capability_gui_bridge import CapabilityGUIBridge
 from navikoLAB.naviko_self_growth_bridge import NavikoSelfGrowthBridge
+from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
+from navikoLAB.experience_memory import ExperienceMemory
+from navikoLAB.process_recorder import ProcessRecorder
 
 ROOT = Path(__file__).resolve().parent
 SELF_FILE = ROOT / "naviko.py"
@@ -143,6 +146,17 @@ improvement_manager = ImprovementManager(LAB_DIR)
 mission_bridge = MissionBridge(LAB_DIR)
 growth_bridge = NavikoSelfGrowthBridge()
 
+
+# === 新しい自己改善モジュール ===
+experience_memory = ExperienceMemory(lab_dir=LAB_DIR)
+error_diagnostic_engine = ErrorDiagnosticEngine(
+    lab_dir=LAB_DIR,
+    experience_memory=experience_memory
+)
+process_recorder = ProcessRecorder(lab_dir=LAB_DIR)
+
+
+
 autonomous_core = AutonomousCore(
     LAB_DIR,
     memory_manager=memory_manager,
@@ -153,6 +167,62 @@ autonomous_core = AutonomousCore(
     autonomy_controller=autonomy_controller,
     mission_bridge=mission_bridge
 )
+
+# =====================
+
+
+def diagnose_and_handle_error(error, context=None):
+    """
+    エラーを自動診断して解決策を提案する
+    
+    Args:
+        error: 発生したエラー（Exceptionオブジェクトまたは文字列）
+        context: エラー発生時のコンテキスト情報
+    
+    Returns:
+        診断結果と解決策を含む辞書
+    """
+    error_message = str(error)
+    
+    # エラーを診断
+    diagnosis = error_diagnostic_engine.diagnose_error(
+        error_message,
+        context=context or {}
+    )
+    
+    if not diagnosis.get("success"):
+        return {
+            "success": False,
+            "message": f"エラーが発生しました: {error_message}",
+            "diagnosis": None,
+            "solutions": []
+        }
+    
+    # 解決策を提案
+    solutions = error_diagnostic_engine.suggest_solutions(diagnosis)
+    
+    # フォーマット
+    diagnosis_text = error_diagnostic_engine.format_diagnosis(diagnosis)
+    solutions_text = error_diagnostic_engine.format_solutions(solutions)
+    
+    full_message = f"{diagnosis_text}\n\n{solutions_text}"
+    
+    # 経験として記録
+    if experience_memory:
+        experience_memory.record_error(
+            error_type=diagnosis["error_type"],
+            error_message=error_message,
+            context=context or {},
+            severity=diagnosis["severity"]
+        )
+    
+    return {
+        "success": True,
+        "message": full_message,
+        "diagnosis": diagnosis,
+        "solutions": solutions,
+        "auto_fixable": diagnosis.get("auto_fixable", False)
+    }
 
 # =====================
 
