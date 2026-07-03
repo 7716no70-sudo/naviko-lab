@@ -67,9 +67,6 @@ EXPERIENCE_SUMMARY_FILE = ROOT / "experience_summary.json"
 SUCCESS_PATTERN_FILE = ROOT / "success_patterns.json"
 REJECT_PATTERN_FILE = ROOT / "reject_patterns.json"
 GROWTH_REPORT_FILE = ROOT / "growth_report.json"
-ADOPTION_REQUEST_FILE = ROOT / "adoption_request.json"
-ADOPTION_HISTORY_FILE = ROOT / "adoption_history.json"
-ADOPTION_DIAGNOSIS_FILE = ROOT / "adoption_diagnosis.json"
 
 
 # =========================
@@ -91,9 +88,6 @@ ENABLE_GROWTH_REPORT = True
 BACKUP_DIR = ROOT / "backup"
 
 LAB_DIR = ROOT / "navikoLAB"
-PATCH_DIR = LAB_DIR / "patch_suggestions"
-APPROVED_DIR = LAB_DIR / "approved_patches"
-REJECTED_DIR = LAB_DIR / "rejected_patches"
 
 LINE_PATCH_DIR = LAB_DIR / "line_patches"
 LINE_PATCH_PREVIEW_DIR = LAB_DIR / "line_patch_previews"
@@ -979,7 +973,6 @@ def load_json(path, default):
     except Exception:
         return default
 
-ADOPTION_HISTORY_FILE = ROOT / "adoption_history.json"
 
 def run_agent_manager_from_gui(c_area=None):
     try:
@@ -1355,36 +1348,6 @@ def show_approved_line_patches_from_gui(c_area=None):
     return message
 
 show_approved_line_patches_from_gui
-
-def save_adoption_history(record):
-    history = load_json(
-        ADOPTION_HISTORY_FILE,
-        []
-    )
-
-    record_key = (
-        record.get("selected_file"),
-        record.get("status"),
-        record.get("rollback")
-    )
-
-    for item in history:
-        item_key = (
-            item.get("selected_file"),
-            item.get("status"),
-            item.get("rollback")
-        )
-
-        if item_key == record_key:
-            return
-
-    history.append(record)
-
-    save_json(
-        ADOPTION_HISTORY_FILE,
-        history
-    )
-
 
 DANGER_WORDS = [
     "delete",
@@ -3328,21 +3291,6 @@ def load_json_file(file_path, default=None):
     except Exception:
         return default
 
-def save_adoption_diagnosis():
-    report_text = diagnose_adoption_system()
-
-    data = {
-        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "report": report_text
-    }
-
-    save_json(
-        ADOPTION_DIAGNOSIS_FILE,
-        data
-    )
-
-    return "反映安全システム診断を保存しました。"
-
 def save_rollback_pattern(record):
     """
     ロールバック発生時の失敗パターンを保存する。
@@ -3527,12 +3475,10 @@ def show_original_naviko_functions_from_gui(c_area=None):
 
 def diagnose_adoption_system():
     adoption_history = load_json(
-        ADOPTION_HISTORY_FILE,
         []
     )
 
     adoption_request = load_json(
-        ADOPTION_REQUEST_FILE,
         {}
     )
 
@@ -3541,7 +3487,6 @@ def diagnose_adoption_system():
 
     report = [
         "=== 反映安全システム診断 ===",
-        f"反映履歴ファイル: {'あり' if ADOPTION_HISTORY_FILE.exists() else 'なし'}",
         f"反映履歴件数: {len(adoption_history)}",
         f"現在の反映申請: {adoption_request.get('status', 'なし')}",
         f"選定候補: {adoption_request.get('selected_file', 'なし')}",
@@ -3597,153 +3542,6 @@ def save_adoption_success_pattern(record):
         SUCCESS_PATTERN_FILE,
         patterns
     )
-
-def analyze_adoption_history():
-    """
-    オリジナル反映履歴を分析する。
-    blocked_before_apply や diagnosis_only は安全停止として扱い、
-    実ロールバック失敗とは分けて集計する。
-    """
-    history = load_json(ADOPTION_HISTORY_FILE, [])
-
-    total = len(history)
-    success_count = 0
-    rollback_count = 0
-    startup_failed_count = 0
-    blocked_count = 0
-    continuous_failures = 0
-
-    recent_history = history[-5:]
-
-    safe_block_statuses = [
-        "blocked_before_apply",
-        "diagnosis_only",
-        "limited_patch_precheck_blocked",
-        "limited_patch_blocked",
-    ]
-
-    success_statuses = [
-        "success",
-        "applied",
-        "apply_success",
-        "startup_success",
-    ]
-
-    for item in history:
-        status = str(item.get("status", "")).lower()
-        rollback_value = str(item.get("rollback", "")).lower()
-        startup_test = item.get("startup_test", None)
-
-        is_safe_block = status in safe_block_statuses
-
-        is_success = status in success_statuses
-
-        is_startup_failed = (
-            startup_test is False
-            or str(startup_test).lower() in [
-                "false",
-                "ng",
-                "failed",
-                "fail"
-            ]
-        )
-
-        is_rollback = (
-            not is_safe_block
-            and (
-                rollback_value in [
-                    "true",
-                    "yes",
-                    "1",
-                    "done",
-                    "completed"
-                ]
-                or "rollback" in status
-                or "rolled_back" in status
-                or "startup_failed" in status
-                or is_startup_failed
-            )
-        )
-
-        if is_safe_block:
-            blocked_count += 1
-
-        if is_success:
-            success_count += 1
-
-        if is_startup_failed and not is_safe_block:
-            startup_failed_count += 1
-
-        if is_rollback:
-            rollback_count += 1
-
-    for item in reversed(history):
-        status = str(item.get("status", "")).lower()
-        rollback_value = str(item.get("rollback", "")).lower()
-        startup_test = item.get("startup_test", None)
-
-        is_safe_block = status in safe_block_statuses
-
-        is_failed = (
-            not is_safe_block
-            and (
-                rollback_value in [
-                    "true",
-                    "yes",
-                    "1",
-                    "done",
-                    "completed"
-                ]
-                or "rollback" in status
-                or "startup_failed" in status
-                or startup_test is False
-                or str(startup_test).lower() in [
-                    "false",
-                    "ng",
-                    "failed",
-                    "fail"
-                ]
-            )
-        )
-
-        if is_failed:
-            continuous_failures += 1
-        else:
-            break
-
-    recent_success_count = 0
-
-    for item in recent_history:
-        status = str(item.get("status", "")).lower()
-
-        if status in success_statuses:
-            recent_success_count += 1
-
-    success_rate = 0.0
-    if total > 0:
-        success_rate = round((success_count / total) * 100, 1)
-
-    recent_success_rate = 0.0
-    if recent_history:
-        recent_success_rate = round(
-            (recent_success_count / len(recent_history)) * 100,
-            1
-        )
-
-    return {
-        "total": total,
-        "success_count": success_count,
-        "rollback_count": rollback_count,
-        "startup_failed_count": startup_failed_count,
-        "blocked_count": blocked_count,
-        "success_rate": success_rate,
-        "recent_success_rate": recent_success_rate,
-        "continuous_failures": continuous_failures,
-
-        # 旧コード互換用
-        "success": success_count,
-        "rollback": rollback_count,
-    }
 
 def decide_adoption_safety_level():
     report = analyze_adoption_history()
@@ -3914,12 +3712,6 @@ def score_patch_suggestion(patch_text):
         "simplicity": simplicity,
         "reasons": reasons
     }
-
-def open_adoption_history_file():
-    try:
-        os.startfile(ADOPTION_HISTORY_FILE)
-    except Exception as e:
-        print(f"反映履歴ファイルを開けませんでした: {e}")
 
 def explain_forbidden_growth(text):
     text = text.lower()
@@ -4548,12 +4340,6 @@ def run_growth_trial_from_gui(c_area=None):
         target=worker,
         daemon=True
     ).start()
-
-def open_approved_patches_folder():
-    try:
-        os.startfile(APPROVED_DIR)
-    except Exception as e:
-        print(f"採用候補フォルダを開けませんでした: {e}")
 
 def open_line_patch_log_file():
     """
@@ -5308,96 +5094,14 @@ def select_patch_for_original_naviko():
         "backup_created": False,
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
     return request
 
-def approve_adoption_request():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
-
-    if not request:
-        return "adoption_request.json が見つかりません。"
-
-    request["approved"] = True
-    request["status"] = "approved"
-    request["approved_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    save_json(ADOPTION_REQUEST_FILE, request)
-
-    return "反映候補を人間承認済みにしました。次にバックアップと構文チェックへ進めます。"
-
-def check_approved_adoption_request():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
-
-    if not request:
-        return "adoption_request.json が見つかりません。"
-
-    if request.get("approved") is not True:
-        return "まだ人間承認されていません。先に『反映候補を承認』してください。"
-
-    selected_path = request.get("selected_path")
-
-    if not selected_path:
-        return "selected_path がありません。反映候補ファイルを特定できません。"
-
-    candidate_file = Path(selected_path)
-
-    if not candidate_file.exists():
-        return f"反映候補ファイルが見つかりません。\n{candidate_file}"
-
-    content = candidate_file.read_text(
-        encoding="utf-8",
-        errors="ignore"
-    )
-
-    if not content.strip():
-        return "反映候補ファイルが空です。"
-
-    candidate_type = detect_candidate_type(content)
-
-    if candidate_type == "限定差分パッチ":
-        ok, message = check_limited_diff_patch_safety(content)
-
-        request["candidate_type"] = candidate_type
-        request["limited_patch"] = detect_limited_diff_patch(content)
-
-        if ok:
-            request["precheck_passed"] = True
-            request["status"] = "limited_patch_precheck_passed"
-        else:
-            request["precheck_passed"] = False
-            request["status"] = "limited_patch_precheck_blocked"
-
-        save_json(ADOPTION_REQUEST_FILE, request)
-
-        return (
-            "限定差分パッチの反映前チェックを実行しました。\n\n"
-            f"{format_limited_patch_info(request['limited_patch'])}\n\n"
-            f"{message}"
-        )
-
-    if candidate_type != "Python全文":
-        return (
-            "反映前チェック停止。\n"
-            f"候補タイプ: {candidate_type}\n"
-            "この候補は naviko.py にそのまま反映できません。\n"
-            "Python全文の候補を選定してください。"
-        )
-
-    return (
-        "反映前チェックOK。\n"
-        f"候補ファイル: {candidate_file.name}\n"
-        f"候補タイプ: {candidate_type}\n"
-        f"文字数: {len(content)}\n"
-        "次工程でバックアップと構文チェックへ進めます。"
-    )
-
 def syntax_check_approved_candidate():
     import py_compile
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5430,7 +5134,6 @@ def syntax_check_approved_candidate():
         request["candidate_type"] = candidate_type
         request["limited_patch"] = detect_limited_diff_patch(content)
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "限定差分パッチを検出しました。\n\n"
@@ -5465,7 +5168,6 @@ def syntax_check_approved_candidate():
     request["syntax_checked_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "syntax_checked"
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "構文チェック成功。\n"
@@ -5476,7 +5178,6 @@ def syntax_check_approved_candidate():
 def create_original_backup_for_adoption():
     import shutil
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5501,7 +5202,6 @@ def create_original_backup_for_adoption():
     request["backup_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "backup_created"
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "オリジナル naviko.py のバックアップを作成しました。\n"
@@ -5915,7 +5615,6 @@ def apply_limited_function_replacement(content):
     return True, replaced_code
 
 def apply_approved_candidate_to_original():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5973,7 +5672,6 @@ def apply_approved_candidate_to_original():
         else:
             request["status"] = "limited_patch_blocked"
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         replace_ok, replace_result = apply_limited_function_replacement(content)
 
@@ -5997,7 +5695,6 @@ def apply_approved_candidate_to_original():
                 request["applied_to"] = str(original_file)
                 request["apply_mode"] = "limited_function_replacement"
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "限定差分パッチをオリジナル naviko.py に反映しました。\n"
@@ -6026,7 +5723,6 @@ def apply_approved_candidate_to_original():
         request["status"] = "apply_blocked_by_candidate_type"
         request["candidate_type"] = candidate_type
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "最終反映を停止しました。\n"
@@ -6054,7 +5750,6 @@ def apply_approved_candidate_to_original():
         request["applied"] = False
         request["cancelled_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return "最終反映はキャンセルされました。"
 
@@ -6068,7 +5763,6 @@ def apply_approved_candidate_to_original():
     request["applied_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["applied_to"] = str(original_file)
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "承認済み候補をオリジナル naviko.py に反映しました。\n"
@@ -6080,7 +5774,6 @@ def verify_original_after_apply():
     import py_compile
     import shutil
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -6133,7 +5826,6 @@ def verify_original_after_apply():
                     "selected_file": request.get("selected_file")
                 })
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "反映後チェック失敗。\n"
@@ -6155,7 +5847,6 @@ def verify_original_after_apply():
             "rollback": False
         })
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "反映後チェック失敗。\n"
@@ -6200,7 +5891,6 @@ def verify_original_after_apply():
                     "error": request.get("verify_error")
                 })
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "構文チェックは成功しましたが、起動テストに失敗しました。\n\n"
@@ -6209,7 +5899,6 @@ def verify_original_after_apply():
                 )
 
         request["rollback"] = False
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "構文チェックは成功しましたが、起動テストに失敗しました。\n\n"
@@ -6242,7 +5931,6 @@ def verify_original_after_apply():
     request["verify_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["rollback"] = False
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "反映後チェック成功。\n"
@@ -6258,79 +5946,6 @@ def open_rejected_patches_folder():
     except Exception as e:
         print(f"却下フォルダを開けませんでした: {e}")
 
-def open_rejected_patches_folder():
-    try:
-        os.startfile(REJECTED_DIR)
-    except Exception as e:
-        print(f"却下フォルダを開けませんでした: {e}")
-
-
-def open_adoption_history_window():
-    history = load_json(
-        ADOPTION_HISTORY_FILE,
-        []
-    )
-
-    win = tk.Toplevel()
-    win.title("反映履歴")
-    win.geometry("700x500")
-    win.configure(bg="#101020")
-
-    area = scrolledtext.ScrolledText(
-        win,
-        bg="#181830",
-        fg="#ffffff",
-        insertbackground="white",
-        wrap=tk.WORD
-    )
-
-    area.pack(
-        fill=tk.BOTH,
-        expand=True,
-        padx=10,
-        pady=10
-    )
-
-    if not history:
-        area.insert(
-            tk.END,
-            "反映履歴はまだありません。"
-        )
-        area.config(state="disabled")
-        return
-
-    summary = analyze_adoption_history()
-
-
-    area.insert(
-        tk.END,
-        "=== 反映履歴サマリー ===\n"
-        f"総記録数: {summary.get('total')}\n"
-        f"成功数: {summary.get('success_count')}\n"
-        f"ロールバック数: {summary.get('rollback_count')}\n"
-        f"成功率: {summary.get('success_rate')}%\n"
-        "========================\n\n"
-    )   
-
-    for i, item in enumerate(
-        reversed(history),
-        start=1
-    ):
-        area.insert(
-            tk.END,
-            f"【{i}件目】\n"
-            f"日時: {item.get('date')}\n"
-            f"状態: {item.get('status')}\n"
-            f"候補: {item.get('selected_file')}\n"
-            f"起動テスト: {item.get('startup_test')}\n"
-            f"ロールバック: {item.get('rollback')}\n"
-            f"復元元: {item.get('rollback_from')}\n"
-            f"復元先: {item.get('rollback_to')}\n"
-            f"エラー: {item.get('error')}\n"
-            "--------------------------------\n"
-        )
-
-    area.config(state="disabled")
 
 def open_growth_report_file():
     try:
@@ -8142,32 +7757,6 @@ def create_ai_patch_suggestion(goal=None, strategy=None, success_pattern=None, r
 
     return result
 
-def create_multiple_ai_patch_suggestions(
-    count=PATCH_GENERATION_COUNT,
-    goal=None,
-    strategy=None,
-    success_pattern=None,
-    reject_pattern=None
-):
-    suggestions = []
-    
-    for i in range(count):
-        print(f"改善案 {i + 1} を生成中...")
-
-        suggestion = create_ai_patch_suggestion(
-            goal=goal,
-            strategy=strategy,
-            success_pattern=success_pattern,
-            reject_pattern=reject_pattern,
-        )
-
-        if suggestion:
-            suggestions.append(suggestion)
-
-    time.sleep(PATCH_GENERATION_INTERVAL)   
-
-    return suggestions
-
 def select_best_patch_suggestion(suggestions):
     if not suggestions:
         return None, None
@@ -9253,12 +8842,6 @@ def advance_growth_goal(area_w):
             f"{goal}"
         )
 
-def open_adoption_diagnosis_file():
-    try:
-        os.startfile(ADOPTION_DIAGNOSIS_FILE)
-    except Exception as e:
-        print(f"反映診断ファイルを開けませんでした: {e}")
-
 def add_memory(text):
     memory.setdefault(
         "memories",
@@ -9312,12 +8895,6 @@ def open_memory_editor(area_w):
         "現在の記憶ファイル memory.json を使っています。直接編集できます。"
     )
 
-
-def open_adoption_request_file():
-    try:
-        os.startfile(ADOPTION_REQUEST_FILE)
-    except Exception as e:
-        print(f"反映候補ファイルを開けませんでした: {e}")
 
 def show_text_window(title, text):
     win = tk.Toplevel()
@@ -10080,25 +9657,17 @@ def open_naviko_menu_window(c_area):
         elif name == "LAB":
             add_menu_button(body, "自己点検・成長案作成", lambda: run_growth_system(c_area), "#2563eb")
             add_menu_button(body, "LAB成長トライアル", lambda: run_growth_trial_from_gui(c_area), "#7c3aed")
-            add_menu_button(body, "反映候補を承認", lambda: append_chat_bubble(c_area, "LAB", approve_adoption_request()), "#16a34a")
-            add_menu_button(body, "反映前チェック", lambda: append_chat_bubble(c_area, "LAB", check_approved_adoption_request()), "#2563eb")
             add_menu_button(body, "候補構文チェック", lambda: append_chat_bubble(c_area, "LAB", syntax_check_approved_candidate()))
             add_menu_button(body, "反映前バックアップ", lambda: append_chat_bubble(c_area, "LAB", create_original_backup_for_adoption()))
             add_menu_button(body, "オリジナルへ最終反映", lambda: append_chat_bubble(c_area, "LAB", apply_approved_candidate_to_original()), "#dc2626")
             add_menu_button(body, "反映後チェック", lambda: append_chat_bubble(c_area, "LAB", verify_original_after_apply()), "#15803d")
             add_menu_button(body, "反映診断", lambda: append_chat_bubble(c_area, "LAB", diagnose_adoption_system()))
-            add_menu_button(body, "診断保存", lambda: append_chat_bubble(c_area, "LAB", save_adoption_diagnosis()))
 
         elif name == "Files":
             add_menu_button(body, "成功ログを開く", open_success_patterns_file, "#16a34a")
             add_menu_button(body, "却下ログを開く", open_reject_patterns_file, "#b91c1c")
             add_menu_button(body, "成長レポートを開く", open_growth_report_file, "#2563eb")
-            add_menu_button(body, "採用候補を開く", open_approved_patches_folder)
-            add_menu_button(body, "却下案を開く", open_rejected_patches_folder)
-            add_menu_button(body, "反映候補を開く", open_adoption_request_file)
             add_menu_button(body, "反映候補を選ぶ", lambda: select_patch_for_original_naviko_from_gui(c_area))
-            add_menu_button(body, "反映履歴JSON", open_adoption_history_file)
-            add_menu_button(body, "診断JSON", open_adoption_diagnosis_file)
 
         elif name == "Capability":
             add_menu_button(body,"Capability一覧",lambda: show_capability_gui_from_gui(c_area),"#2563eb")
@@ -10197,7 +9766,6 @@ def select_patch_for_original_naviko():
         "summary": best_content[:500]
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
@@ -10245,7 +9813,6 @@ def select_patch_for_original_naviko_from_gui(c_area=None):
         "rollback": False
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     if c_area:
         append_chat_bubble(
