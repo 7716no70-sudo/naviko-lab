@@ -76,3 +76,6 @@ credentials.json
 *api_key*
 *apikey*
 *_api_*
+# Databricks temporary files
+dapid*.txt
+*.tmp
