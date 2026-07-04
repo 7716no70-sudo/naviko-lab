@@ -20,6 +20,18 @@ except Exception:
 
 # === Original Naviko LAB Bridge import end ===
 
+# === Character Generator Hub import ===
+try:
+    from navikoLAB.character_generator_hub.character_loader import (
+        CharacterLoader,
+        create_character_selection_dialog
+    )
+    CHARACTER_HUB_AVAILABLE = True
+except ImportError:
+    CHARACTER_HUB_AVAILABLE = False
+    print("Character Generator Hub is not available. Using legacy spritesheet system.")
+# === Character Generator Hub import end ===
+
 import py_compile
 from pathlib import Path
 import tkinter as tk
