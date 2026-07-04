@@ -29,6 +29,15 @@ import requests
 import sys
 from tkinter import filedialog
 import subprocess
+
+# 音声認識ライブラリ
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    sr = None
+
 from navikoLAB.memory_manager import MemoryManager
 from navikoLAB.goal_manager import GoalManager
 from navikoLAB.agent_registry import AgentRegistry
@@ -8514,9 +8523,100 @@ def append_chat_bubble(area_widget, sender, message_text):
 
     area_widget.see(tk.END)
     area_widget.configure(state="disabled")
-    
 
+
+def start_voice_recognition(entry_w, area_w):
+    """
+    音声認識を開始し、認識したテキストを入力フィールドに挿入
     
+    Args:
+        entry_w: 入力フィールド（ScrolledTextまたはEntry）
+        area_w: チャット表示エリア
+    """
+    if not SPEECH_RECOGNITION_AVAILABLE:
+        append_chat_bubble(
+            area_w,
+            "navi",
+            "エラー：音声認識ライブラリがインストールされていません。\n"
+            "'pip install SpeechRecognition pyaudio' を実行してください。"
+        )
+        return
+    
+    def recognition_thread():
+        try:
+            # チャットエリアに状態表示
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "🎤 音声認識を開始します。話してください..."
+            )
+            
+            # Recognizerオブジェクトを作成
+            recognizer = sr.Recognizer()
+            
+            # マイクから音声を取得
+            with sr.Microphone() as source:
+                # ノイズ調整（1秒間）
+                recognizer.adjust_for_ambient_noise(source, duration=1)
+                
+                # 音声を録音（タイムアウト: 5秒）
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+            
+            # Google Web Speech APIで音声認識（日本語）
+            text = recognizer.recognize_google(audio, language="ja-JP")
+            
+            # 認識成功：入力フィールドにテキストを挿入
+            if isinstance(entry_w, scrolledtext.ScrolledText):
+                # 現在のカーソル位置に挿入
+                entry_w.insert(tk.INSERT, text)
+            else:
+                # Entryの場合は末尾に追加
+                current_text = entry_w.get()
+                entry_w.delete(0, tk.END)
+                entry_w.insert(0, current_text + text)
+            
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"✅ 音声認識完了： \"{text}\""
+            )
+            
+        except sr.WaitTimeoutError:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "⚠️ タイムアウト：音声が検出されませんでした。もう一度試してください。"
+            )
+        except sr.UnknownValueError:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "⚠️ 音声を認識できませんでした。もう一度ハッキリと話してください。"
+            )
+        except sr.RequestError as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ APIエラー： Google Speech Recognitionサービスに接続できませんでした。\nエラー: {e}"
+            )
+        except OSError as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ マイクエラー：マイクが見つかりません。\nエラー: {e}\n\n"
+                "マイクが接続されているか確認してください。"
+            )
+        except Exception as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ 予期しないエラーが発生しました： {e}"
+            )
+    
+    # 別スレッドで音声認識を実行（GUIブロックを防ぐ）
+    thread = threading.Thread(target=recognition_thread, daemon=True)
+    thread.start()
+
 
 def execute_groq_communication(entry_w, paste_w, area_w):
     # entry_wがScrolledTextかEntryかを判定
@@ -9275,6 +9375,16 @@ def open_custom_chat_window():
         text="レイアウト設定",
         command=lambda: open_layout_settings_dialog(c_win),
         bg="#0891b2",
+        fg="#ffffff",
+        font=("MS Gothic", 9),
+        bd=0
+    ).pack(side=tk.LEFT, padx=3)
+
+    tk.Button(
+        top_menu,
+        text="🎤 音声入力",
+        command=lambda: start_voice_recognition(e_box, c_area),
+        bg="#dc2626",
         fg="#ffffff",
         font=("MS Gothic", 9),
         bd=0
