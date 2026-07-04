@@ -8803,7 +8803,7 @@ def execute_groq_communication(entry_w, paste_w, area_w):
         paste_text = ""
     
     # プレースホルダーテキストのチェック
-    placeholder_text = "ここに日本語で入力してください..."
+    placeholder_text = "ここに日本語で入力してください...\nコードや長いテキストも直接貼り付けられます。"
     if user_text == placeholder_text:
         user_text = ""
 
