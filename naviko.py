@@ -9605,12 +9605,6 @@ def open_custom_chat_window():
     e_box.bind("<FocusOut>", on_focus_out)
     e_box.focus_set()
 
-    # Ctrl+Enterで送信
-    e_box.bind(
-        "<Control-Return>",
-        lambda e: execute_groq_communication(e_box, None, c_area)
-    )
-
     tk.Button(
         i_frame,
         text="送信",
