@@ -9614,7 +9614,7 @@ def open_custom_chat_window():
     tk.Button(
         i_frame,
         text="送信",
-        command=lambda: execute_groq_communication(e_box, p_box, c_area),
+        command=lambda: execute_groq_communication(e_box, None, c_area),
         bg="#4f46e5",
         fg="#ffffff",
         font=("MS Gothic", 9, "bold"),
