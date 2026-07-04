@@ -47,6 +47,11 @@ from navikoLAB.core.mission_bridge import MissionBridge
 from navikoLAB.capabilities.capability_gui_bridge import CapabilityGUIBridge
 from navikoLAB.naviko_self_growth_bridge import NavikoSelfGrowthBridge
 
+# === 自己改善モジュール ===
+from navikoLAB.experience_memory import ExperienceMemory
+from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
+from navikoLAB.process_recorder import ProcessRecorder
+
 ROOT = Path(__file__).resolve().parent
 SELF_FILE = ROOT / "naviko.py"
 SPRITESHEET = ROOT / "spritesheet.webp"
