@@ -105,13 +105,8 @@ LINE_PATCH_TEMP_DIR = LAB_DIR / "line_patch_temp_applied"
 APPROVED_LINE_PATCH_DIR = LAB_DIR / "approved_line_patches"
 PENDING_LINE_PATCH_DIR = LAB_DIR / "pending_line_patches"
 
-PATCH_SUGGESTION_DIR = PATCH_DIR
-
 BACKUP_DIR.mkdir(exist_ok=True)
 LAB_DIR.mkdir(exist_ok=True)
-PATCH_DIR.mkdir(parents=True, exist_ok=True)
-APPROVED_DIR.mkdir(parents=True, exist_ok=True)
-REJECTED_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_TEMP_DIR.mkdir(parents=True, exist_ok=True)
