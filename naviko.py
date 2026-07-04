@@ -20,27 +20,33 @@ except Exception:
 
 # === Original Naviko LAB Bridge import end ===
 
-# === Character Generator Hub import ===
-try:
-    from navikoLAB.character_generator_hub.character_loader import (
-        CharacterLoader,
-        create_character_selection_dialog
-    )
-    CHARACTER_HUB_AVAILABLE = True
-except ImportError:
-    CHARACTER_HUB_AVAILABLE = False
-    print("Character Generator Hub is not available. Using legacy spritesheet system.")
-# === Character Generator Hub import end ===
-
 import py_compile
 from pathlib import Path
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 from PIL import Image, ImageTk
 import requests
+
+# === Speech Recognition import ===
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    print("speech_recognition is not available. Voice input will be disabled.")
+# === Speech Recognition import end ===
 import sys
 from tkinter import filedialog
 import subprocess
+
+# 音声認識ライブラリ
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    sr = None
+
 from navikoLAB.memory_manager import MemoryManager
 from navikoLAB.goal_manager import GoalManager
 from navikoLAB.agent_registry import AgentRegistry
@@ -58,10 +64,8 @@ from navikoLAB.improvement_manager import ImprovementManager
 from navikoLAB.core.mission_bridge import MissionBridge
 from navikoLAB.capabilities.capability_gui_bridge import CapabilityGUIBridge
 from navikoLAB.naviko_self_growth_bridge import NavikoSelfGrowthBridge
-
-# === 自己改善モジュール ===
-from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
+from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.process_recorder import ProcessRecorder
 
 ROOT = Path(__file__).resolve().parent
@@ -81,19 +85,12 @@ EXPERIENCE_SUMMARY_FILE = ROOT / "experience_summary.json"
 SUCCESS_PATTERN_FILE = ROOT / "success_patterns.json"
 REJECT_PATTERN_FILE = ROOT / "reject_patterns.json"
 GROWTH_REPORT_FILE = ROOT / "growth_report.json"
-ADOPTION_REQUEST_FILE = ROOT / "adoption_request.json"
-ADOPTION_HISTORY_FILE = ROOT / "adoption_history.json"
-ADOPTION_DIAGNOSIS_FILE = ROOT / "adoption_diagnosis.json"
+GUI_LAYOUT_FILE = ROOT / "gui_layout.json"
 
 
 # =========================
 # ナビ子LAB設定
 # =========================
-
-# Character Hub統合用グローバル変数
-character_loader = None
-current_character_id = "naviko_default_001"
-character_hub_enabled = False
 
 AUTO_GROWTH_TRIAL = False
 
@@ -110,9 +107,6 @@ ENABLE_GROWTH_REPORT = True
 BACKUP_DIR = ROOT / "backup"
 
 LAB_DIR = ROOT / "navikoLAB"
-PATCH_DIR = LAB_DIR / "patch_suggestions"
-APPROVED_DIR = LAB_DIR / "approved_patches"
-REJECTED_DIR = LAB_DIR / "rejected_patches"
 
 LINE_PATCH_DIR = LAB_DIR / "line_patches"
 LINE_PATCH_PREVIEW_DIR = LAB_DIR / "line_patch_previews"
@@ -120,13 +114,8 @@ LINE_PATCH_TEMP_DIR = LAB_DIR / "line_patch_temp_applied"
 APPROVED_LINE_PATCH_DIR = LAB_DIR / "approved_line_patches"
 PENDING_LINE_PATCH_DIR = LAB_DIR / "pending_line_patches"
 
-PATCH_SUGGESTION_DIR = PATCH_DIR
-
 BACKUP_DIR.mkdir(exist_ok=True)
 LAB_DIR.mkdir(exist_ok=True)
-PATCH_DIR.mkdir(parents=True, exist_ok=True)
-APPROVED_DIR.mkdir(parents=True, exist_ok=True)
-REJECTED_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
 LINE_PATCH_TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -165,6 +154,7 @@ improvement_manager = ImprovementManager(LAB_DIR)
 mission_bridge = MissionBridge(LAB_DIR)
 growth_bridge = NavikoSelfGrowthBridge()
 
+
 # === 新しい自己改善モジュール ===
 experience_memory = ExperienceMemory(lab_dir=LAB_DIR)
 error_diagnostic_engine = ErrorDiagnosticEngine(
@@ -172,6 +162,8 @@ error_diagnostic_engine = ErrorDiagnosticEngine(
     experience_memory=experience_memory
 )
 process_recorder = ProcessRecorder(lab_dir=LAB_DIR)
+
+
 
 autonomous_core = AutonomousCore(
     LAB_DIR,
@@ -186,10 +178,65 @@ autonomous_core = AutonomousCore(
 
 # =====================
 
-# ここに新しいGroq APIキーを入れる
-# 環境変数から取得（セキュリティ強化）
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
+def diagnose_and_handle_error(error, context=None):
+    """
+    エラーを自動診断して解決策を提案する
+    
+    Args:
+        error: 発生したエラー（Exceptionオブジェクトまたは文字列）
+        context: エラー発生時のコンテキスト情報
+    
+    Returns:
+        診断結果と解決策を含む辞書
+    """
+    error_message = str(error)
+    
+    # エラーを診断
+    diagnosis = error_diagnostic_engine.diagnose_error(
+        error_message,
+        context=context or {}
+    )
+    
+    if not diagnosis.get("success"):
+        return {
+            "success": False,
+            "message": f"エラーが発生しました: {error_message}",
+            "diagnosis": None,
+            "solutions": []
+        }
+    
+    # 解決策を提案
+    solutions = error_diagnostic_engine.suggest_solutions(diagnosis)
+    
+    # フォーマット
+    diagnosis_text = error_diagnostic_engine.format_diagnosis(diagnosis)
+    solutions_text = error_diagnostic_engine.format_solutions(solutions)
+    
+    full_message = f"{diagnosis_text}\n\n{solutions_text}"
+    
+    # 経験として記録
+    if experience_memory:
+        experience_memory.record_error(
+            error_type=diagnosis["error_type"],
+            error_message=error_message,
+            context=context or {},
+            severity=diagnosis["severity"]
+        )
+    
+    return {
+        "success": True,
+        "message": full_message,
+        "diagnosis": diagnosis,
+        "solutions": solutions,
+        "auto_fixable": diagnosis.get("auto_fixable", False)
+    }
+
+# =====================
+
+# ここに新しいGroq APIキーを入れる
+# 例: GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.1-8b-instant"
 
 BASE_WIDTH = 192
@@ -263,30 +310,19 @@ def run_gui_app_project_builder():
         return result
 
     except Exception as e:
-        # エラーを診断して解決策を提案
-        error_result = diagnose_and_handle_error(
-            e,
-            context={
-                "function": "run_gui_app_project_builder",
-                "user_goal": goal if 'goal' in locals() else "unknown"
-            }
-        )
-        
-        message = error_result["message"]
-        print(message)
+        error_message = f"アプリ生成中にエラーが発生しました: {e}"
+        print(error_message)
 
         if "custom_chat_log" in globals():
-            custom_chat_log.insert("end", "\n【ナビ子】\n" + message + "\n")
+            custom_chat_log.insert("end", "\n【ナビ子】\n" + error_message + "\n")
             custom_chat_log.see("end")
         elif "chat_log" in globals():
-            chat_log.insert("end", "\n【ナビ子】\n" + message + "\n")
+            chat_log.insert("end", "\n【ナビ子】\n" + error_message + "\n")
             chat_log.see("end")
 
         return {
             "success": False,
-            "error": str(e),
-            "diagnosis": error_result.get("diagnosis"),
-            "solutions": error_result.get("solutions")
+            "error": str(e)
         }
 
 def save_autonomous_build_history(
@@ -951,7 +987,6 @@ def load_json(path, default):
     except Exception:
         return default
 
-ADOPTION_HISTORY_FILE = ROOT / "adoption_history.json"
 
 def run_agent_manager_from_gui(c_area=None):
     try:
@@ -1327,36 +1362,6 @@ def show_approved_line_patches_from_gui(c_area=None):
     return message
 
 show_approved_line_patches_from_gui
-
-def save_adoption_history(record):
-    history = load_json(
-        ADOPTION_HISTORY_FILE,
-        []
-    )
-
-    record_key = (
-        record.get("selected_file"),
-        record.get("status"),
-        record.get("rollback")
-    )
-
-    for item in history:
-        item_key = (
-            item.get("selected_file"),
-            item.get("status"),
-            item.get("rollback")
-        )
-
-        if item_key == record_key:
-            return
-
-    history.append(record)
-
-    save_json(
-        ADOPTION_HISTORY_FILE,
-        history
-    )
-
 
 DANGER_WORDS = [
     "delete",
@@ -3300,21 +3305,6 @@ def load_json_file(file_path, default=None):
     except Exception:
         return default
 
-def save_adoption_diagnosis():
-    report_text = diagnose_adoption_system()
-
-    data = {
-        "date": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "report": report_text
-    }
-
-    save_json(
-        ADOPTION_DIAGNOSIS_FILE,
-        data
-    )
-
-    return "反映安全システム診断を保存しました。"
-
 def save_rollback_pattern(record):
     """
     ロールバック発生時の失敗パターンを保存する。
@@ -3499,12 +3489,10 @@ def show_original_naviko_functions_from_gui(c_area=None):
 
 def diagnose_adoption_system():
     adoption_history = load_json(
-        ADOPTION_HISTORY_FILE,
         []
     )
 
     adoption_request = load_json(
-        ADOPTION_REQUEST_FILE,
         {}
     )
 
@@ -3513,7 +3501,6 @@ def diagnose_adoption_system():
 
     report = [
         "=== 反映安全システム診断 ===",
-        f"反映履歴ファイル: {'あり' if ADOPTION_HISTORY_FILE.exists() else 'なし'}",
         f"反映履歴件数: {len(adoption_history)}",
         f"現在の反映申請: {adoption_request.get('status', 'なし')}",
         f"選定候補: {adoption_request.get('selected_file', 'なし')}",
@@ -3569,153 +3556,6 @@ def save_adoption_success_pattern(record):
         SUCCESS_PATTERN_FILE,
         patterns
     )
-
-def analyze_adoption_history():
-    """
-    オリジナル反映履歴を分析する。
-    blocked_before_apply や diagnosis_only は安全停止として扱い、
-    実ロールバック失敗とは分けて集計する。
-    """
-    history = load_json(ADOPTION_HISTORY_FILE, [])
-
-    total = len(history)
-    success_count = 0
-    rollback_count = 0
-    startup_failed_count = 0
-    blocked_count = 0
-    continuous_failures = 0
-
-    recent_history = history[-5:]
-
-    safe_block_statuses = [
-        "blocked_before_apply",
-        "diagnosis_only",
-        "limited_patch_precheck_blocked",
-        "limited_patch_blocked",
-    ]
-
-    success_statuses = [
-        "success",
-        "applied",
-        "apply_success",
-        "startup_success",
-    ]
-
-    for item in history:
-        status = str(item.get("status", "")).lower()
-        rollback_value = str(item.get("rollback", "")).lower()
-        startup_test = item.get("startup_test", None)
-
-        is_safe_block = status in safe_block_statuses
-
-        is_success = status in success_statuses
-
-        is_startup_failed = (
-            startup_test is False
-            or str(startup_test).lower() in [
-                "false",
-                "ng",
-                "failed",
-                "fail"
-            ]
-        )
-
-        is_rollback = (
-            not is_safe_block
-            and (
-                rollback_value in [
-                    "true",
-                    "yes",
-                    "1",
-                    "done",
-                    "completed"
-                ]
-                or "rollback" in status
-                or "rolled_back" in status
-                or "startup_failed" in status
-                or is_startup_failed
-            )
-        )
-
-        if is_safe_block:
-            blocked_count += 1
-
-        if is_success:
-            success_count += 1
-
-        if is_startup_failed and not is_safe_block:
-            startup_failed_count += 1
-
-        if is_rollback:
-            rollback_count += 1
-
-    for item in reversed(history):
-        status = str(item.get("status", "")).lower()
-        rollback_value = str(item.get("rollback", "")).lower()
-        startup_test = item.get("startup_test", None)
-
-        is_safe_block = status in safe_block_statuses
-
-        is_failed = (
-            not is_safe_block
-            and (
-                rollback_value in [
-                    "true",
-                    "yes",
-                    "1",
-                    "done",
-                    "completed"
-                ]
-                or "rollback" in status
-                or "startup_failed" in status
-                or startup_test is False
-                or str(startup_test).lower() in [
-                    "false",
-                    "ng",
-                    "failed",
-                    "fail"
-                ]
-            )
-        )
-
-        if is_failed:
-            continuous_failures += 1
-        else:
-            break
-
-    recent_success_count = 0
-
-    for item in recent_history:
-        status = str(item.get("status", "")).lower()
-
-        if status in success_statuses:
-            recent_success_count += 1
-
-    success_rate = 0.0
-    if total > 0:
-        success_rate = round((success_count / total) * 100, 1)
-
-    recent_success_rate = 0.0
-    if recent_history:
-        recent_success_rate = round(
-            (recent_success_count / len(recent_history)) * 100,
-            1
-        )
-
-    return {
-        "total": total,
-        "success_count": success_count,
-        "rollback_count": rollback_count,
-        "startup_failed_count": startup_failed_count,
-        "blocked_count": blocked_count,
-        "success_rate": success_rate,
-        "recent_success_rate": recent_success_rate,
-        "continuous_failures": continuous_failures,
-
-        # 旧コード互換用
-        "success": success_count,
-        "rollback": rollback_count,
-    }
 
 def decide_adoption_safety_level():
     report = analyze_adoption_history()
@@ -3886,12 +3726,6 @@ def score_patch_suggestion(patch_text):
         "simplicity": simplicity,
         "reasons": reasons
     }
-
-def open_adoption_history_file():
-    try:
-        os.startfile(ADOPTION_HISTORY_FILE)
-    except Exception as e:
-        print(f"反映履歴ファイルを開けませんでした: {e}")
 
 def explain_forbidden_growth(text):
     text = text.lower()
@@ -4520,12 +4354,6 @@ def run_growth_trial_from_gui(c_area=None):
         target=worker,
         daemon=True
     ).start()
-
-def open_approved_patches_folder():
-    try:
-        os.startfile(APPROVED_DIR)
-    except Exception as e:
-        print(f"採用候補フォルダを開けませんでした: {e}")
 
 def open_line_patch_log_file():
     """
@@ -5280,96 +5108,14 @@ def select_patch_for_original_naviko():
         "backup_created": False,
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
     return request
 
-def approve_adoption_request():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
-
-    if not request:
-        return "adoption_request.json が見つかりません。"
-
-    request["approved"] = True
-    request["status"] = "approved"
-    request["approved_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    save_json(ADOPTION_REQUEST_FILE, request)
-
-    return "反映候補を人間承認済みにしました。次にバックアップと構文チェックへ進めます。"
-
-def check_approved_adoption_request():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
-
-    if not request:
-        return "adoption_request.json が見つかりません。"
-
-    if request.get("approved") is not True:
-        return "まだ人間承認されていません。先に『反映候補を承認』してください。"
-
-    selected_path = request.get("selected_path")
-
-    if not selected_path:
-        return "selected_path がありません。反映候補ファイルを特定できません。"
-
-    candidate_file = Path(selected_path)
-
-    if not candidate_file.exists():
-        return f"反映候補ファイルが見つかりません。\n{candidate_file}"
-
-    content = candidate_file.read_text(
-        encoding="utf-8",
-        errors="ignore"
-    )
-
-    if not content.strip():
-        return "反映候補ファイルが空です。"
-
-    candidate_type = detect_candidate_type(content)
-
-    if candidate_type == "限定差分パッチ":
-        ok, message = check_limited_diff_patch_safety(content)
-
-        request["candidate_type"] = candidate_type
-        request["limited_patch"] = detect_limited_diff_patch(content)
-
-        if ok:
-            request["precheck_passed"] = True
-            request["status"] = "limited_patch_precheck_passed"
-        else:
-            request["precheck_passed"] = False
-            request["status"] = "limited_patch_precheck_blocked"
-
-        save_json(ADOPTION_REQUEST_FILE, request)
-
-        return (
-            "限定差分パッチの反映前チェックを実行しました。\n\n"
-            f"{format_limited_patch_info(request['limited_patch'])}\n\n"
-            f"{message}"
-        )
-
-    if candidate_type != "Python全文":
-        return (
-            "反映前チェック停止。\n"
-            f"候補タイプ: {candidate_type}\n"
-            "この候補は naviko.py にそのまま反映できません。\n"
-            "Python全文の候補を選定してください。"
-        )
-
-    return (
-        "反映前チェックOK。\n"
-        f"候補ファイル: {candidate_file.name}\n"
-        f"候補タイプ: {candidate_type}\n"
-        f"文字数: {len(content)}\n"
-        "次工程でバックアップと構文チェックへ進めます。"
-    )
-
 def syntax_check_approved_candidate():
     import py_compile
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5402,7 +5148,6 @@ def syntax_check_approved_candidate():
         request["candidate_type"] = candidate_type
         request["limited_patch"] = detect_limited_diff_patch(content)
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "限定差分パッチを検出しました。\n\n"
@@ -5437,7 +5182,6 @@ def syntax_check_approved_candidate():
     request["syntax_checked_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "syntax_checked"
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "構文チェック成功。\n"
@@ -5448,7 +5192,6 @@ def syntax_check_approved_candidate():
 def create_original_backup_for_adoption():
     import shutil
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5473,7 +5216,6 @@ def create_original_backup_for_adoption():
     request["backup_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "backup_created"
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "オリジナル naviko.py のバックアップを作成しました。\n"
@@ -5887,7 +5629,6 @@ def apply_limited_function_replacement(content):
     return True, replaced_code
 
 def apply_approved_candidate_to_original():
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5945,7 +5686,6 @@ def apply_approved_candidate_to_original():
         else:
             request["status"] = "limited_patch_blocked"
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         replace_ok, replace_result = apply_limited_function_replacement(content)
 
@@ -5969,7 +5709,6 @@ def apply_approved_candidate_to_original():
                 request["applied_to"] = str(original_file)
                 request["apply_mode"] = "limited_function_replacement"
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "限定差分パッチをオリジナル naviko.py に反映しました。\n"
@@ -5998,7 +5737,6 @@ def apply_approved_candidate_to_original():
         request["status"] = "apply_blocked_by_candidate_type"
         request["candidate_type"] = candidate_type
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "最終反映を停止しました。\n"
@@ -6026,7 +5764,6 @@ def apply_approved_candidate_to_original():
         request["applied"] = False
         request["cancelled_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return "最終反映はキャンセルされました。"
 
@@ -6040,7 +5777,6 @@ def apply_approved_candidate_to_original():
     request["applied_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["applied_to"] = str(original_file)
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "承認済み候補をオリジナル naviko.py に反映しました。\n"
@@ -6052,7 +5788,6 @@ def verify_original_after_apply():
     import py_compile
     import shutil
 
-    request = load_json(ADOPTION_REQUEST_FILE, {})
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -6105,7 +5840,6 @@ def verify_original_after_apply():
                     "selected_file": request.get("selected_file")
                 })
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "反映後チェック失敗。\n"
@@ -6127,7 +5861,6 @@ def verify_original_after_apply():
             "rollback": False
         })
 
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "反映後チェック失敗。\n"
@@ -6172,7 +5905,6 @@ def verify_original_after_apply():
                     "error": request.get("verify_error")
                 })
 
-                save_json(ADOPTION_REQUEST_FILE, request)
 
                 return (
                     "構文チェックは成功しましたが、起動テストに失敗しました。\n\n"
@@ -6181,7 +5913,6 @@ def verify_original_after_apply():
                 )
 
         request["rollback"] = False
-        save_json(ADOPTION_REQUEST_FILE, request)
 
         return (
             "構文チェックは成功しましたが、起動テストに失敗しました。\n\n"
@@ -6214,7 +5945,6 @@ def verify_original_after_apply():
     request["verify_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["rollback"] = False
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     return (
         "反映後チェック成功。\n"
@@ -6230,79 +5960,6 @@ def open_rejected_patches_folder():
     except Exception as e:
         print(f"却下フォルダを開けませんでした: {e}")
 
-def open_rejected_patches_folder():
-    try:
-        os.startfile(REJECTED_DIR)
-    except Exception as e:
-        print(f"却下フォルダを開けませんでした: {e}")
-
-
-def open_adoption_history_window():
-    history = load_json(
-        ADOPTION_HISTORY_FILE,
-        []
-    )
-
-    win = tk.Toplevel()
-    win.title("反映履歴")
-    win.geometry("700x500")
-    win.configure(bg="#101020")
-
-    area = scrolledtext.ScrolledText(
-        win,
-        bg="#181830",
-        fg="#ffffff",
-        insertbackground="white",
-        wrap=tk.WORD
-    )
-
-    area.pack(
-        fill=tk.BOTH,
-        expand=True,
-        padx=10,
-        pady=10
-    )
-
-    if not history:
-        area.insert(
-            tk.END,
-            "反映履歴はまだありません。"
-        )
-        area.config(state="disabled")
-        return
-
-    summary = analyze_adoption_history()
-
-
-    area.insert(
-        tk.END,
-        "=== 反映履歴サマリー ===\n"
-        f"総記録数: {summary.get('total')}\n"
-        f"成功数: {summary.get('success_count')}\n"
-        f"ロールバック数: {summary.get('rollback_count')}\n"
-        f"成功率: {summary.get('success_rate')}%\n"
-        "========================\n\n"
-    )   
-
-    for i, item in enumerate(
-        reversed(history),
-        start=1
-    ):
-        area.insert(
-            tk.END,
-            f"【{i}件目】\n"
-            f"日時: {item.get('date')}\n"
-            f"状態: {item.get('status')}\n"
-            f"候補: {item.get('selected_file')}\n"
-            f"起動テスト: {item.get('startup_test')}\n"
-            f"ロールバック: {item.get('rollback')}\n"
-            f"復元元: {item.get('rollback_from')}\n"
-            f"復元先: {item.get('rollback_to')}\n"
-            f"エラー: {item.get('error')}\n"
-            "--------------------------------\n"
-        )
-
-    area.config(state="disabled")
 
 def open_growth_report_file():
     try:
@@ -8114,32 +7771,6 @@ def create_ai_patch_suggestion(goal=None, strategy=None, success_pattern=None, r
 
     return result
 
-def create_multiple_ai_patch_suggestions(
-    count=PATCH_GENERATION_COUNT,
-    goal=None,
-    strategy=None,
-    success_pattern=None,
-    reject_pattern=None
-):
-    suggestions = []
-    
-    for i in range(count):
-        print(f"改善案 {i + 1} を生成中...")
-
-        suggestion = create_ai_patch_suggestion(
-            goal=goal,
-            strategy=strategy,
-            success_pattern=success_pattern,
-            reject_pattern=reject_pattern,
-        )
-
-        if suggestion:
-            suggestions.append(suggestion)
-
-    time.sleep(PATCH_GENERATION_INTERVAL)   
-
-    return suggestions
-
 def select_best_patch_suggestion(suggestions):
     if not suggestions:
         return None, None
@@ -8544,36 +8175,6 @@ print("->", msg)
 backup_path = backup_self()
 print(f"-> バックアップ作成: {backup_path.name}")
 
-# === Character Hub初期化 ===
-def initialize_character_system():
-    """
-    キャラクターシステムを初期化
-    CharacterLoaderが利用可能なら使用、そうでなければ既存システムを使用
-    """
-    global character_loader, character_hub_enabled
-    
-    if CHARACTER_HUB_AVAILABLE:
-        try:
-            character_loader = CharacterLoader(
-                characters_dir="characters",
-                default_character_id="naviko_default_001"
-            )
-            character_hub_enabled = True
-            print("✅ Character Hub initialized")
-            return True
-        except Exception as e:
-            print(f"❌ Character Hub initialization failed: {e}")
-            print("Falling back to legacy spritesheet system")
-            character_hub_enabled = False
-            return False
-    else:
-        print("Using legacy spritesheet system")
-        character_hub_enabled = False
-        return False
-
-character_hub_enabled = initialize_character_system()
-# === Character Hub初期化終了 ===
-
 root = tk.Tk()
 root.title("NavikoPet")
 root.overrideredirect(True)
@@ -8588,21 +8189,7 @@ except Exception:
 root.geometry(f"{BASE_WIDTH}x{BASE_HEIGHT}+500+300")
 
 
-# === スプライトシート読み込み ===
-if character_hub_enabled and character_loader:
-    # Character Hub経由で読み込み
-    try:
-        sprite_info = character_loader.get_spritesheet_info()
-        spritesheet_path = sprite_info['path']
-        sheet = Image.open(spritesheet_path).convert("RGBA")
-        print(f"✅ Character Hub: Loaded spritesheet from {spritesheet_path}")
-    except Exception as e:
-        print(f"❌ Character Hub spritesheet load failed: {e}")
-        print("Falling back to legacy spritesheet")
-        sheet = Image.open(SPRITESHEET).convert("RGBA")
-else:
-    # 既存の読み込み処理
-    sheet = Image.open(SPRITESHEET).convert("RGBA")
+sheet = Image.open(SPRITESHEET).convert("RGBA")
 
 for name, (row, total) in states_config.items():
     raw_frames[name] = []
@@ -8940,13 +8527,285 @@ def append_chat_bubble(area_widget, sender, message_text):
 
     area_widget.see(tk.END)
     area_widget.configure(state="disabled")
-    
 
+
+def get_default_gui_layout():
+    """
+    デフォルトのGUIレイアウト設定を返す
+    """
+    return {
+        "window_width": 600,
+        "window_height": 700,
+        "chat_font_size": 10,
+        "input_font_size": 10,
+        "input_height": 5,
+        "bg_color": "#1e1e24",
+        "chat_bg": "#2d2d2d",
+        "fg_color": "#ffffff"
+    }
+
+
+def load_gui_layout_settings():
+    """
+    gui_layout.jsonからGUIレイアウト設定を読み込む
+    ファイルがない場合はデフォルト値を返す
+    """
+    if not GUI_LAYOUT_FILE.exists():
+        return get_default_gui_layout()
     
+    try:
+        with open(GUI_LAYOUT_FILE, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+        
+        # デフォルト値とマージ（欠落しているキーを補完）
+        default = get_default_gui_layout()
+        for key in default:
+            if key not in settings:
+                settings[key] = default[key]
+        
+        return settings
+    except Exception as e:
+        print(f"レイアウト設定の読み込みエラー: {e}")
+        return get_default_gui_layout()
+
+
+def save_gui_layout_settings(settings):
+    """
+    GUIレイアウト設定をgui_layout.jsonに保存
+    """
+    try:
+        with open(GUI_LAYOUT_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"レイアウト設定の保存エラー: {e}")
+        return False
+
+
+def open_layout_settings_dialog(parent_window):
+    """
+    レイアウト設定ダイアログを開く
+    """
+    settings_win = tk.Toplevel(parent_window)
+    settings_win.title("レイアウト設定")
+    settings_win.geometry("400x450")
+    settings_win.configure(bg="#1e1e24")
+    
+    # 現在の設定を読み込む
+    current_settings = load_gui_layout_settings()
+    
+    # 設定項目のラベルと入力フィールド
+    tk.Label(
+        settings_win,
+        text="ウィンドウ幅:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    width_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    width_entry.insert(0, str(current_settings["window_width"]))
+    width_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="ウィンドウ高さ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    height_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    height_entry.insert(0, str(current_settings["window_height"]))
+    height_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="チャットフォントサイズ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    chat_font_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    chat_font_entry.insert(0, str(current_settings["chat_font_size"]))
+    chat_font_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="入力フォントサイズ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    input_font_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    input_font_entry.insert(0, str(current_settings["input_font_size"]))
+    input_font_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="入力エリア高さ（行数）:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    input_height_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    input_height_entry.insert(0, str(current_settings["input_height"]))
+    input_height_entry.pack()
+    
+    def save_and_close():
+        try:
+            new_settings = {
+                "window_width": int(width_entry.get()),
+                "window_height": int(height_entry.get()),
+                "chat_font_size": int(chat_font_entry.get()),
+                "input_font_size": int(input_font_entry.get()),
+                "input_height": int(input_height_entry.get()),
+                "bg_color": current_settings["bg_color"],
+                "chat_bg": current_settings["chat_bg"],
+                "fg_color": current_settings["fg_color"]
+            }
+            
+            if save_gui_layout_settings(new_settings):
+                messagebox.showinfo("成功", "設定を保存しました。\n次回起動時に反映されます。")
+                settings_win.destroy()
+            else:
+                messagebox.showerror("エラー", "設定の保存に失敗しました。")
+        except ValueError:
+            messagebox.showerror("エラー", "数値を正しく入力してください。")
+    
+    # 保存ボタン
+    tk.Button(
+        settings_win,
+        text="保存",
+        command=save_and_close,
+        bg="#4f46e5",
+        fg="#ffffff",
+        font=("MS Gothic", 10, "bold"),
+        padx=20,
+        pady=5
+    ).pack(pady=20)
+    
+    # キャンセルボタン
+    tk.Button(
+        settings_win,
+        text="キャンセル",
+        command=settings_win.destroy,
+        bg="#6b7280",
+        fg="#ffffff",
+        font=("MS Gothic", 10),
+        padx=20,
+        pady=5
+    ).pack()
+
+
+def start_voice_recognition(entry_w, area_w):
+    """
+    音声認識を開始し、認識したテキストを入力フィールドに挿入
+    
+    Args:
+        entry_w: 入力フィールド（ScrolledTextまたはEntry）
+        area_w: チャット表示エリア
+    """
+    if not SPEECH_RECOGNITION_AVAILABLE:
+        append_chat_bubble(
+            area_w,
+            "navi",
+            "エラー：音声認識ライブラリがインストールされていません。\n"
+            "'pip install SpeechRecognition pyaudio' を実行してください。"
+        )
+        return
+    
+    def recognition_thread():
+        try:
+            # チャットエリアに状態表示
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "🎤 音声認識を開始します。話してください..."
+            )
+            
+            # Recognizerオブジェクトを作成
+            recognizer = sr.Recognizer()
+            
+            # マイクから音声を取得
+            with sr.Microphone() as source:
+                # ノイズ調整（1秒間）
+                recognizer.adjust_for_ambient_noise(source, duration=1)
+                
+                # 音声を録音（タイムアウト: 5秒）
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+            
+            # Google Web Speech APIで音声認識（日本語）
+            text = recognizer.recognize_google(audio, language="ja-JP")
+            
+            # 認識成功：入力フィールドにテキストを挿入
+            if isinstance(entry_w, scrolledtext.ScrolledText):
+                # 現在のカーソル位置に挿入
+                entry_w.insert(tk.INSERT, text)
+            else:
+                # Entryの場合は末尾に追加
+                current_text = entry_w.get()
+                entry_w.delete(0, tk.END)
+                entry_w.insert(0, current_text + text)
+            
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"✅ 音声認識完了： \"{text}\""
+            )
+            
+        except sr.WaitTimeoutError:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "⚠️ タイムアウト：音声が検出されませんでした。もう一度試してください。"
+            )
+        except sr.UnknownValueError:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                "⚠️ 音声を認識できませんでした。もう一度ハッキリと話してください。"
+            )
+        except sr.RequestError as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ APIエラー： Google Speech Recognitionサービスに接続できませんでした。\nエラー: {e}"
+            )
+        except OSError as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ マイクエラー：マイクが見つかりません。\nエラー: {e}\n\n"
+                "マイクが接続されているか確認してください。"
+            )
+        except Exception as e:
+            append_chat_bubble(
+                area_w,
+                "navi",
+                f"❌ 予期しないエラーが発生しました： {e}"
+            )
+    
+    # 別スレッドで音声認識を実行（GUIブロックを防ぐ）
+    thread = threading.Thread(target=recognition_thread, daemon=True)
+    thread.start()
+
 
 def execute_groq_communication(entry_w, paste_w, area_w):
-    user_text = entry_w.get().strip()
-    paste_text = paste_w.get("1.0", tk.END).strip()
+    # entry_wがScrolledTextかEntryかを判定
+    if isinstance(entry_w, scrolledtext.ScrolledText):
+        user_text = entry_w.get("1.0", tk.END).strip()
+    else:
+        user_text = entry_w.get().strip()
+    
+    # paste_wがNoneの場合は空文字列
+    if paste_w is not None:
+        paste_text = paste_w.get("1.0", tk.END).strip()
+    else:
+        paste_text = ""
+    
+    # プレースホルダーテキストのチェック
+    placeholder_text = "ここに日本語で入力してください..."
+    if user_text == placeholder_text:
+        user_text = ""
 
     if not user_text and not paste_text:
         return
@@ -9001,8 +8860,12 @@ def execute_groq_communication(entry_w, paste_w, area_w):
             )
             return
 
-    entry_w.delete(0, tk.END)
-    paste_w.delete("1.0", tk.END)
+    if isinstance(entry_w, scrolledtext.ScrolledText):
+        entry_w.delete("1.0", tk.END)
+    else:
+        entry_w.delete(0, tk.END)
+    if paste_w is not None:
+        paste_w.delete("1.0", tk.END)
 
     append_chat_bubble(area_w, "user", user_text if user_text else "[データ送信]")
     pet_vars["state"] = "waiting"
@@ -9269,12 +9132,6 @@ def advance_growth_goal(area_w):
             f"{goal}"
         )
 
-def open_adoption_diagnosis_file():
-    try:
-        os.startfile(ADOPTION_DIAGNOSIS_FILE)
-    except Exception as e:
-        print(f"反映診断ファイルを開けませんでした: {e}")
-
 def add_memory(text):
     memory.setdefault(
         "memories",
@@ -9328,12 +9185,6 @@ def open_memory_editor(area_w):
         "現在の記憶ファイル memory.json を使っています。直接編集できます。"
     )
 
-
-def open_adoption_request_file():
-    try:
-        os.startfile(ADOPTION_REQUEST_FILE)
-    except Exception as e:
-        print(f"反映候補ファイルを開けませんでした: {e}")
 
 def show_text_window(title, text):
     win = tk.Toplevel()
@@ -9561,115 +9412,25 @@ def run_original_lab_autonomous_flow_from_naviko(user_goal):
 # === Original Naviko LAB Bridge caller end ===
 
 
-# === Character Hub GUI関数 ===
-def open_character_selection_menu(root, c_area=None):
-    """
-    キャラクター選択メニューを開く
-    """
-    global character_loader, current_character_id
-    
-    if not character_loader:
-        if c_area:
-            append_chat_bubble(
-                c_area,
-                "navi",
-                "Character Hubが利用できません。"
-            )
-        return
-    
-    selected_id = create_character_selection_dialog(root, character_loader)
-    
-    if selected_id:
-        # キャラクター切り替え
-        if character_loader.switch_character(selected_id):
-            current_character_id = selected_id
-            
-            # スプライトシート再読み込み
-            try:
-                sprite_info = character_loader.get_spritesheet_info()
-                spritesheet_path = sprite_info['path']
-                global sheet, raw_frames, tk_frames
-                sheet = Image.open(spritesheet_path).convert("RGBA")
-                
-                # フレーム再生成
-                raw_frames = {}
-                for name, (row, total) in states_config.items():
-                    raw_frames[name] = []
-                    y_pos = row * BASE_HEIGHT
-                    for col in range(total):
-                        x_pos = col * BASE_WIDTH
-                        cropped = sheet.crop((x_pos, y_pos, x_pos + BASE_WIDTH, y_pos + BASE_HEIGHT))
-                        raw_frames[name].append(cropped)
-                
-                resize_pet_images(current_scale)
-                
-                char = character_loader.get_current_character()
-                success_msg = f"キャラクターを '{char.metadata.name}' に切り替えました。"
-                
-                if c_area:
-                    append_chat_bubble(c_area, "navi", success_msg)
-                
-                tk.messagebox.showinfo(
-                    "キャラクター切り替え",
-                    success_msg
-                )
-                
-            except Exception as e:
-                error_msg = f"キャラクター切り替えエラー: {e}"
-                if c_area:
-                    append_chat_bubble(c_area, "navi", error_msg)
-                tk.messagebox.showerror("エラー", error_msg)
-
-def show_character_library_statistics(root, c_area=None):
-    """
-    キャラクターライブラリ統計情報を表示
-    """
-    global character_loader
-    
-    if not character_loader:
-        return
-    
-    stats = character_loader.get_library_statistics()
-    
-    stats_text = f"""
-キャラクターライブラリ統計
-
-総キャラクター数: {stats['total_characters']}
-お気に入り: {stats['favorites_count']}
-最近使用: {stats['recent_count']}
-
-タイプ別:
-"""
-    
-    for char_type, count in stats['types'].items():
-        stats_text += f"  {char_type}: {count}\n"
-    
-    stats_text += "\nスタイル別:\n"
-    for style, count in stats['styles'].items():
-        stats_text += f"  {style}: {count}\n"
-    
-    if c_area:
-        append_chat_bubble(c_area, "navi", stats_text)
-    
-    tk.messagebox.showinfo("ライブラリ統計", stats_text)
-# === Character Hub GUI関数終了 ===
-
 def open_custom_chat_window():
     if pet_vars["chat_win"] and pet_vars["chat_win"].winfo_exists():
         pet_vars["chat_win"].destroy()
         pet_vars["chat_win"] = None
         return
+    
+    # GUIレイアウト設定を読み込み
+    layout = load_gui_layout_settings()
 
     c_win = tk.Toplevel(root)
     pet_vars["chat_win"] = c_win
 
     c_win.overrideredirect(False)
     c_win.wm_attributes("-topmost", True)
-    c_win.configure(bg="#1e1e24")
+    c_win.configure(bg=layout["bg_color"])
 
     w_w = int(BASE_WIDTH * current_scale)
     c_win.geometry(
-        f"620x900+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
+        f"{layout['window_width']}x{layout['window_height']}+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
     )
     c_win.resizable(True, True)
 
@@ -9701,9 +9462,9 @@ def open_custom_chat_window():
     c_area = scrolledtext.ScrolledText(
         c_win,
         wrap=tk.WORD,
-        bg="#141418",
-        fg="#ffffff",
-        font=("MS Gothic", 10),
+        bg=layout["chat_bg"],
+        fg=layout["fg_color"],
+        font=("MS Gothic", layout["chat_font_size"]),
         bd=0
     )
     c_area.pack(
@@ -9780,55 +9541,74 @@ def open_custom_chat_window():
         bd=0
     ).pack(side=tk.LEFT, padx=3)
 
-    # === Character Hubメニュー ===
-    if character_hub_enabled:
-        tk.Button(
-            top_menu,
-            text="🎭 キャラクター",
-            command=lambda: open_character_selection_menu(root, c_area),
-            bg="#ec4899",
-            fg="#ffffff",
-            font=("MS Gothic", 9, "bold"),
-            bd=0,
-            padx=10
-        ).pack(side=tk.LEFT, padx=3)
+    tk.Button(
+        top_menu,
+        text="レイアウト設定",
+        command=lambda: open_layout_settings_dialog(c_win),
+        bg="#0891b2",
+        fg="#ffffff",
+        font=("MS Gothic", 9),
+        bd=0
+    ).pack(side=tk.LEFT, padx=3)
 
+    tk.Button(
+        top_menu,
+        text="🎤 音声入力",
+        command=lambda: start_voice_recognition(e_box, c_area),
+        bg="#dc2626",
+        fg="#ffffff",
+        font=("MS Gothic", 9),
+        bd=0
+    ).pack(side=tk.LEFT, padx=3)
+
+    # 多行入力エリア（チャット入力・コード貼り付け統合）
     tk.Label(
         c_win,
-        text="コード / データ貼り付けエリア",
+        text="チャット入力エリア（複数行入力可能、Ctrl+Enterで送信）",
         bg="#1e1e24",
         fg="#8a8a9e",
         font=("MS Gothic", 8)
     ).pack(anchor="w", padx=10)
 
-    p_box = scrolledtext.ScrolledText(
-        c_win,
-        wrap=tk.NONE,
-        bg="#282830",
-        fg="#a8ffb2",
-        font=("Consolas", 9),
-        height=6,
-        bd=0
-    )
-    p_box.pack(padx=10, pady=3, fill=tk.X)
-
     i_frame = tk.Frame(c_win, bg="#1e1e24")
     i_frame.pack(padx=10, pady=6, fill=tk.X, side=tk.BOTTOM)
 
-    e_box = tk.Entry(
+    # EntryをScrolledText（多行入力）に変更
+    e_box = scrolledtext.ScrolledText(
         i_frame,
+        wrap=tk.WORD,
         bg="#2d2d2d",
         fg="#ffffff",
         font=("MS Gothic", 11),
+        height=4,
         bd=1,
         insertbackground="white"
     )
-    e_box.pack(fill=tk.X, side=tk.LEFT, expand=True, ipady=4)
+    e_box.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=(0, 5))
+    
+    # 日本語入力プレースホルダー設定
+    placeholder_text = "ここに日本語で入力してください...\nコードや長いテキストも直接貼り付けられます。"
+    e_box.insert("1.0", placeholder_text)
+    e_box.config(fg="#808080")  # プレースホルダーはグレー表示
+    
+    def on_focus_in(event):
+        if e_box.get("1.0", tk.END).strip() == placeholder_text.strip():
+            e_box.delete("1.0", tk.END)
+            e_box.config(fg="#ffffff")  # 通常の白色に戻す
+    
+    def on_focus_out(event):
+        if not e_box.get("1.0", tk.END).strip():
+            e_box.insert("1.0", placeholder_text)
+            e_box.config(fg="#808080")  # プレースホルダーをグレー表示
+    
+    e_box.bind("<FocusIn>", on_focus_in)
+    e_box.bind("<FocusOut>", on_focus_out)
     e_box.focus_set()
 
+    # Ctrl+Enterで送信
     e_box.bind(
-        "<Return>",
-        lambda e: execute_groq_communication(e_box, p_box, c_area)
+        "<Control-Return>",
+        lambda e: execute_groq_communication(e_box, None, c_area)
     )
 
     tk.Button(
@@ -10202,25 +9982,17 @@ def open_naviko_menu_window(c_area):
         elif name == "LAB":
             add_menu_button(body, "自己点検・成長案作成", lambda: run_growth_system(c_area), "#2563eb")
             add_menu_button(body, "LAB成長トライアル", lambda: run_growth_trial_from_gui(c_area), "#7c3aed")
-            add_menu_button(body, "反映候補を承認", lambda: append_chat_bubble(c_area, "LAB", approve_adoption_request()), "#16a34a")
-            add_menu_button(body, "反映前チェック", lambda: append_chat_bubble(c_area, "LAB", check_approved_adoption_request()), "#2563eb")
             add_menu_button(body, "候補構文チェック", lambda: append_chat_bubble(c_area, "LAB", syntax_check_approved_candidate()))
             add_menu_button(body, "反映前バックアップ", lambda: append_chat_bubble(c_area, "LAB", create_original_backup_for_adoption()))
             add_menu_button(body, "オリジナルへ最終反映", lambda: append_chat_bubble(c_area, "LAB", apply_approved_candidate_to_original()), "#dc2626")
             add_menu_button(body, "反映後チェック", lambda: append_chat_bubble(c_area, "LAB", verify_original_after_apply()), "#15803d")
             add_menu_button(body, "反映診断", lambda: append_chat_bubble(c_area, "LAB", diagnose_adoption_system()))
-            add_menu_button(body, "診断保存", lambda: append_chat_bubble(c_area, "LAB", save_adoption_diagnosis()))
 
         elif name == "Files":
             add_menu_button(body, "成功ログを開く", open_success_patterns_file, "#16a34a")
             add_menu_button(body, "却下ログを開く", open_reject_patterns_file, "#b91c1c")
             add_menu_button(body, "成長レポートを開く", open_growth_report_file, "#2563eb")
-            add_menu_button(body, "採用候補を開く", open_approved_patches_folder)
-            add_menu_button(body, "却下案を開く", open_rejected_patches_folder)
-            add_menu_button(body, "反映候補を開く", open_adoption_request_file)
             add_menu_button(body, "反映候補を選ぶ", lambda: select_patch_for_original_naviko_from_gui(c_area))
-            add_menu_button(body, "反映履歴JSON", open_adoption_history_file)
-            add_menu_button(body, "診断JSON", open_adoption_diagnosis_file)
 
         elif name == "Capability":
             add_menu_button(body,"Capability一覧",lambda: show_capability_gui_from_gui(c_area),"#2563eb")
@@ -10319,7 +10091,6 @@ def select_patch_for_original_naviko():
         "summary": best_content[:500]
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
@@ -10367,7 +10138,6 @@ def select_patch_for_original_naviko_from_gui(c_area=None):
         "rollback": False
     }
 
-    save_json(ADOPTION_REQUEST_FILE, request)
 
     if c_area:
         append_chat_bubble(
