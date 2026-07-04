@@ -8520,6 +8520,173 @@ def append_chat_bubble(area_widget, sender, message_text):
     area_widget.configure(state="disabled")
 
 
+def get_default_gui_layout():
+    """
+    デフォルトのGUIレイアウト設定を返す
+    """
+    return {
+        "window_width": 600,
+        "window_height": 700,
+        "chat_font_size": 10,
+        "input_font_size": 10,
+        "input_height": 5,
+        "bg_color": "#1e1e24",
+        "chat_bg": "#2d2d2d",
+        "fg_color": "#ffffff"
+    }
+
+
+def load_gui_layout_settings():
+    """
+    gui_layout.jsonからGUIレイアウト設定を読み込む
+    ファイルがない場合はデフォルト値を返す
+    """
+    if not GUI_LAYOUT_FILE.exists():
+        return get_default_gui_layout()
+    
+    try:
+        with open(GUI_LAYOUT_FILE, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+        
+        # デフォルト値とマージ（欠落しているキーを補完）
+        default = get_default_gui_layout()
+        for key in default:
+            if key not in settings:
+                settings[key] = default[key]
+        
+        return settings
+    except Exception as e:
+        print(f"レイアウト設定の読み込みエラー: {e}")
+        return get_default_gui_layout()
+
+
+def save_gui_layout_settings(settings):
+    """
+    GUIレイアウト設定をgui_layout.jsonに保存
+    """
+    try:
+        with open(GUI_LAYOUT_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"レイアウト設定の保存エラー: {e}")
+        return False
+
+
+def open_layout_settings_dialog(parent_window):
+    """
+    レイアウト設定ダイアログを開く
+    """
+    settings_win = tk.Toplevel(parent_window)
+    settings_win.title("レイアウト設定")
+    settings_win.geometry("400x450")
+    settings_win.configure(bg="#1e1e24")
+    
+    # 現在の設定を読み込む
+    current_settings = load_gui_layout_settings()
+    
+    # 設定項目のラベルと入力フィールド
+    tk.Label(
+        settings_win,
+        text="ウィンドウ幅:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    width_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    width_entry.insert(0, str(current_settings["window_width"]))
+    width_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="ウィンドウ高さ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    height_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    height_entry.insert(0, str(current_settings["window_height"]))
+    height_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="チャットフォントサイズ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    chat_font_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    chat_font_entry.insert(0, str(current_settings["chat_font_size"]))
+    chat_font_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="入力フォントサイズ:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    input_font_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    input_font_entry.insert(0, str(current_settings["input_font_size"]))
+    input_font_entry.pack()
+    
+    tk.Label(
+        settings_win,
+        text="入力エリア高さ（行数）:",
+        bg="#1e1e24",
+        fg="#ffffff",
+        font=("MS Gothic", 10)
+    ).pack(pady=5)
+    input_height_entry = tk.Entry(settings_win, font=("MS Gothic", 10))
+    input_height_entry.insert(0, str(current_settings["input_height"]))
+    input_height_entry.pack()
+    
+    def save_and_close():
+        try:
+            new_settings = {
+                "window_width": int(width_entry.get()),
+                "window_height": int(height_entry.get()),
+                "chat_font_size": int(chat_font_entry.get()),
+                "input_font_size": int(input_font_entry.get()),
+                "input_height": int(input_height_entry.get()),
+                "bg_color": current_settings["bg_color"],
+                "chat_bg": current_settings["chat_bg"],
+                "fg_color": current_settings["fg_color"]
+            }
+            
+            if save_gui_layout_settings(new_settings):
+                messagebox.showinfo("成功", "設定を保存しました。\n次回起動時に反映されます。")
+                settings_win.destroy()
+            else:
+                messagebox.showerror("エラー", "設定の保存に失敗しました。")
+        except ValueError:
+            messagebox.showerror("エラー", "数値を正しく入力してください。")
+    
+    # 保存ボタン
+    tk.Button(
+        settings_win,
+        text="保存",
+        command=save_and_close,
+        bg="#4f46e5",
+        fg="#ffffff",
+        font=("MS Gothic", 10, "bold"),
+        padx=20,
+        pady=5
+    ).pack(pady=20)
+    
+    # キャンセルボタン
+    tk.Button(
+        settings_win,
+        text="キャンセル",
+        command=settings_win.destroy,
+        bg="#6b7280",
+        fg="#ffffff",
+        font=("MS Gothic", 10),
+        padx=20,
+        pady=5
+    ).pack()
+
+
 def start_voice_recognition(entry_w, area_w):
     """
     音声認識を開始し、認識したテキストを入力フィールドに挿入
