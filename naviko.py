@@ -67,6 +67,7 @@ EXPERIENCE_SUMMARY_FILE = ROOT / "experience_summary.json"
 SUCCESS_PATTERN_FILE = ROOT / "success_patterns.json"
 REJECT_PATTERN_FILE = ROOT / "reject_patterns.json"
 GROWTH_REPORT_FILE = ROOT / "growth_report.json"
+GUI_LAYOUT_FILE = ROOT / "gui_layout.json"
 
 
 # =========================
@@ -8518,8 +8519,22 @@ def append_chat_bubble(area_widget, sender, message_text):
     
 
 def execute_groq_communication(entry_w, paste_w, area_w):
-    user_text = entry_w.get().strip()
-    paste_text = paste_w.get("1.0", tk.END).strip()
+    # entry_wがScrolledTextかEntryかを判定
+    if isinstance(entry_w, scrolledtext.ScrolledText):
+        user_text = entry_w.get("1.0", tk.END).strip()
+    else:
+        user_text = entry_w.get().strip()
+    
+    # paste_wがNoneの場合は空文字列
+    if paste_w is not None:
+        paste_text = paste_w.get("1.0", tk.END).strip()
+    else:
+        paste_text = ""
+    
+    # プレースホルダーテキストのチェック
+    placeholder_text = "ここに日本語で入力してください..."
+    if user_text == placeholder_text:
+        user_text = ""
 
     if not user_text and not paste_text:
         return
@@ -8574,8 +8589,12 @@ def execute_groq_communication(entry_w, paste_w, area_w):
             )
             return
 
-    entry_w.delete(0, tk.END)
-    paste_w.delete("1.0", tk.END)
+    if isinstance(entry_w, scrolledtext.ScrolledText):
+        entry_w.delete("1.0", tk.END)
+    else:
+        entry_w.delete(0, tk.END)
+    if paste_w is not None:
+        paste_w.delete("1.0", tk.END)
 
     append_chat_bubble(area_w, "user", user_text if user_text else "[データ送信]")
     pet_vars["state"] = "waiting"
@@ -9127,17 +9146,20 @@ def open_custom_chat_window():
         pet_vars["chat_win"].destroy()
         pet_vars["chat_win"] = None
         return
+    
+    # GUIレイアウト設定を読み込み
+    layout = load_gui_layout_settings()
 
     c_win = tk.Toplevel(root)
     pet_vars["chat_win"] = c_win
 
     c_win.overrideredirect(False)
     c_win.wm_attributes("-topmost", True)
-    c_win.configure(bg="#1e1e24")
+    c_win.configure(bg=layout["bg_color"])
 
     w_w = int(BASE_WIDTH * current_scale)
     c_win.geometry(
-        f"620x900+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
+        f"{layout['window_width']}x{layout['window_height']}+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
     )
     c_win.resizable(True, True)
 
@@ -9169,9 +9191,9 @@ def open_custom_chat_window():
     c_area = scrolledtext.ScrolledText(
         c_win,
         wrap=tk.WORD,
-        bg="#141418",
-        fg="#ffffff",
-        font=("MS Gothic", 10),
+        bg=layout["chat_bg"],
+        fg=layout["fg_color"],
+        font=("MS Gothic", layout["chat_font_size"]),
         bd=0
     )
     c_area.pack(
@@ -9248,42 +9270,64 @@ def open_custom_chat_window():
         bd=0
     ).pack(side=tk.LEFT, padx=3)
 
+    tk.Button(
+        top_menu,
+        text="レイアウト設定",
+        command=lambda: open_layout_settings_dialog(c_win),
+        bg="#0891b2",
+        fg="#ffffff",
+        font=("MS Gothic", 9),
+        bd=0
+    ).pack(side=tk.LEFT, padx=3)
+
+    # 多行入力エリア（チャット入力・コード貼り付け統合）
     tk.Label(
         c_win,
-        text="コード / データ貼り付けエリア",
+        text="チャット入力エリア（複数行入力可能、Ctrl+Enterで送信）",
         bg="#1e1e24",
         fg="#8a8a9e",
         font=("MS Gothic", 8)
     ).pack(anchor="w", padx=10)
 
-    p_box = scrolledtext.ScrolledText(
-        c_win,
-        wrap=tk.NONE,
-        bg="#282830",
-        fg="#a8ffb2",
-        font=("Consolas", 9),
-        height=6,
-        bd=0
-    )
-    p_box.pack(padx=10, pady=3, fill=tk.X)
-
     i_frame = tk.Frame(c_win, bg="#1e1e24")
     i_frame.pack(padx=10, pady=6, fill=tk.X, side=tk.BOTTOM)
 
-    e_box = tk.Entry(
+    # EntryをScrolledText（多行入力）に変更
+    e_box = scrolledtext.ScrolledText(
         i_frame,
+        wrap=tk.WORD,
         bg="#2d2d2d",
         fg="#ffffff",
         font=("MS Gothic", 11),
+        height=4,
         bd=1,
         insertbackground="white"
     )
-    e_box.pack(fill=tk.X, side=tk.LEFT, expand=True, ipady=4)
+    e_box.pack(fill=tk.BOTH, side=tk.LEFT, expand=True, padx=(0, 5))
+    
+    # 日本語入力プレースホルダー設定
+    placeholder_text = "ここに日本語で入力してください...\nコードや長いテキストも直接貼り付けられます。"
+    e_box.insert("1.0", placeholder_text)
+    e_box.config(fg="#808080")  # プレースホルダーはグレー表示
+    
+    def on_focus_in(event):
+        if e_box.get("1.0", tk.END).strip() == placeholder_text.strip():
+            e_box.delete("1.0", tk.END)
+            e_box.config(fg="#ffffff")  # 通常の白色に戻す
+    
+    def on_focus_out(event):
+        if not e_box.get("1.0", tk.END).strip():
+            e_box.insert("1.0", placeholder_text)
+            e_box.config(fg="#808080")  # プレースホルダーをグレー表示
+    
+    e_box.bind("<FocusIn>", on_focus_in)
+    e_box.bind("<FocusOut>", on_focus_out)
     e_box.focus_set()
 
+    # Ctrl+Enterで送信
     e_box.bind(
-        "<Return>",
-        lambda e: execute_groq_communication(e_box, p_box, c_area)
+        "<Control-Return>",
+        lambda e: execute_groq_communication(e_box, None, c_area)
     )
 
     tk.Button(
