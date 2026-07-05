@@ -10203,7 +10203,6 @@ def open_naviko_menu_window(c_area):
 
         elif name == "LAB":
             # LABカテゴリは現在Phase 3システムで管理されています
-            pass
             # LABカテゴリは現在Phase 3システムで管理されています
             pass
 
