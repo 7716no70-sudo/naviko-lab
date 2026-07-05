@@ -1,9 +1,0 @@
-=== ナビ子・成長傾向分析 ===
-直近分析数: 5
-平均trust: 50.6
-平均attachment: 42.6
-平均fatigue: 38.6
-mood履歴: tired, tired, tired, tired, tired
-
-=== ナビ子の自己提案 ===
-・最近信頼度が伸びています。親しい専用セリフを増やしたいです。

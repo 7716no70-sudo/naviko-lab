@@ -10214,7 +10214,6 @@ def open_naviko_menu_window(c_area):
             add_menu_button(body, "成功ログを開く", open_success_patterns_file, "#16a34a")
             add_menu_button(body, "却下ログを開く", open_reject_patterns_file, "#b91c1c")
             add_menu_button(body, "成長レポートを開く", open_growth_report_file, "#2563eb")
-            add_menu_button(body, "反映候補を選ぶ", lambda: select_patch_for_original_naviko_from_gui(c_area))
 
         elif name == "Capability":
             add_menu_button(body,"Capability一覧",lambda: show_capability_gui_from_gui(c_area),"#2563eb")
@@ -10230,10 +10229,6 @@ def open_naviko_menu_window(c_area):
             add_menu_button(body, "自律生成完了診断", lambda: run_autonomous_build_completion_diagnosis_from_gui(c_area))
             add_menu_button(body, "MissionBridge診断", lambda: diagnose_mission_bridge_from_gui(c_area), "#0f766e")
             add_menu_button(body, "MissionManager v1完成保存", lambda: save_mission_manager_v1_report_from_gui(c_area), "#166534")
-            add_menu_button(body, "v1.3完成保存", lambda: save_v13_completion_report_from_gui(c_area))
-            add_menu_button(body,"v1.3.5完成保存",lambda: save_v135_completion_report_from_gui(c_area),"#166534")
-            add_menu_button(body, "学習分析", lambda: append_chat_bubble(c_area, "LAB", format_adoption_learning_analysis()))
-            add_menu_button(body, "オリジナル学習判断", lambda: show_text_window("オリジナルナビ子 学習判断", create_original_learning_advice()))
 
     categories = [
         "Build",

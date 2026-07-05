@@ -1,1 +1,0 @@
-…はぁ。通信失敗です。413 Client Error: Payload Too Large for url: https://api.groq.com/openai/v1/chat/completions
