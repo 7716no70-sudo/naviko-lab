@@ -8186,6 +8186,26 @@ print("->", msg)
 backup_path = backup_self()
 print(f"-> バックアップ作成: {backup_path.name}")
 
+# Phase 3モジュールのグローバルインスタンス
+health_monitor = None
+system_controller = None
+
+if PHASE3_AVAILABLE:
+    try:
+        health_monitor = SystemHealthMonitor(
+            lab_dir=str(ROOT / "navikoLAB")
+        )
+        system_controller = NavikoSystemController(
+            lab_dir=str(ROOT / "navikoLAB")
+        )
+        print("✅ Phase 3モジュール初期化完了")
+    except Exception as e:
+        print(f"⚠️ Phase 3モジュール初期化失敗: {e}")
+        health_monitor = None
+        system_controller = None
+else:
+    print("⚠️ Phase 3モジュール無効（インポート失敗）")
+
 root = tk.Tk()
 root.title("NavikoPet")
 root.overrideredirect(True)
