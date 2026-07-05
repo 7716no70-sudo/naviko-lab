@@ -9681,7 +9681,7 @@ def open_custom_chat_window():
                 # 安全性チェック実行
                 check_result = system_controller.run_safety_check()
                 
-                if check_result["status"] == "healthy":
+                if check_result.get("safe_to_proceed"):
                     append_chat_bubble(
                         c_area,
                         "navi",
