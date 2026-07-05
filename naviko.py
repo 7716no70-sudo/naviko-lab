@@ -9748,8 +9748,8 @@ def open_custom_chat_window():
                 
                 # メトリクス取得
                 metrics = dashboard["current_metrics"]
-                cpu_usage = metrics["cpu_percent"]
-                memory_usage = metrics["memory_percent"]
+                cpu_usage = metrics["cpu"]["usage_percent"]
+                memory_usage = metrics["memory"]["usage_percent"]
                 
                 # ラベル更新
                 health_score_label.config(text=f"健全性: {health_score:.0f}/100")
