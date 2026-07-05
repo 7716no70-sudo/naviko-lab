@@ -3,13 +3,14 @@ from datetime import datetime
 import json
 import platform
 from navikoLAB.connectors.base_ai_connector import BaseAIConnector
-from navikoLAB.app_operator.components.window_inspector import WindowInspector
-from navikoLAB.app_operator.components.explorer_operation_planner import ExplorerOperationPlanner
-from navikoLAB.app_operator.components.keyboard_input_planner import KeyboardInputPlanner
-from navikoLAB.app_operator.components.mouse_click_planner import MouseClickPlanner
-from navikoLAB.app_operator.components.gui_automation_safety_guard import GUIAutomationSafetyGuard
-from navikoLAB.app_operator.components.ocr_planner import OCRPlanner
-from navikoLAB.app_operator.components.human_approval_gate import HumanApprovalGate
+# DISABLED: app_operator module was removed in Phase 3 cleanup
+# from navikoLAB.app_operator.components.window_inspector import WindowInspector
+# from navikoLAB.app_operator.components.explorer_operation_planner import ExplorerOperationPlanner
+# from navikoLAB.app_operator.components.keyboard_input_planner import KeyboardInputPlanner
+# from navikoLAB.app_operator.components.mouse_click_planner import MouseClickPlanner
+# from navikoLAB.app_operator.components.gui_automation_safety_guard import GUIAutomationSafetyGuard
+# from navikoLAB.app_operator.components.ocr_planner import OCRPlanner
+# from navikoLAB.app_operator.components.human_approval_gate import HumanApprovalGate
 
 class RealAppOperatorConnector(BaseAIConnector):
     connector_name = "real_app_operator"
@@ -27,13 +28,6 @@ class RealAppOperatorConnector(BaseAIConnector):
         raise NotImplementedError(
             "RealAppOperatorConnector is disabled: app_operator module was removed in Phase 3 cleanup"
         )
-        # super().__init__(
-        #     model=self.default_model,
-        #     api_key="dry_run_enabled",
-        # )
-        # self.dry_run = dry_run
-        self.log_dir = Path(__file__).resolve().parent / "logs"
-        self.log_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self, task):
         action = task.get("action", "")

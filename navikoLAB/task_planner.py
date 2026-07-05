@@ -108,7 +108,9 @@ class TaskPlanner:
         return selected
 
     def create_plan(self, purpose):
-        planner_feedback = build_task_planner_feedback(purpose)
+        # DISABLED: planner_feedback module removed
+        # planner_feedback = build_task_planner_feedback(purpose)
+        planner_feedback = {}  # Fallback to empty dict
 
         planner_recommendations = planner_feedback.get(
             "planner_recommendations",
@@ -156,8 +158,7 @@ class TaskPlanner:
 
         plan["experience_based_planning"] = True
 
-        # DISABLED: planner_feedback module removed
-        # plan = score_plan_with_experience(plan)
+        plan = score_plan_with_experience(plan)
 
         return plan
 

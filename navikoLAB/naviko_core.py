@@ -9707,11 +9707,12 @@ def launch_original_ai_os(parent_window, mission=None):
                 "original_write": False,
             }
 
-        from navikoLAB.app_operator.app_operator_readonly_core import (
-            inspect_path_readonly,
-        )
-
-        readonly_result = inspect_path_readonly("naviko.py")
+        # DISABLED: app_operator module was removed in Phase 3 cleanup
+        # from navikoLAB.app_operator.app_operator_readonly_core import (
+        #     inspect_path_readonly,
+        # )
+        # readonly_result = inspect_path_readonly("naviko.py")
+        readonly_result = {}  # Fallback to empty dict
 
         result = call_mission(
             mission_text

@@ -1,8 +1,9 @@
 from pathlib import Path
 from navikoLAB.task_planner import TaskPlanner
-from navikoLAB.planner_feedback.capability_feedback_adapter import (
-    adapt_capability_selection_with_feedback,
-)
+# DISABLED: planner_feedback module was removed in Phase 3 cleanup
+# from navikoLAB.planner_feedback.capability_feedback_adapter import (
+#     adapt_capability_selection_with_feedback,
+# )
 
 try:
     from navikoLAB.capabilities.capability_connector import CapabilityConnector
