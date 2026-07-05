@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 from pathlib import Path
 import time
@@ -10202,13 +10202,8 @@ def open_naviko_menu_window(c_area):
             add_menu_button(body, "Agent統合診断", lambda: run_agent_manager_integration_diagnosis_from_gui(c_area))
 
         elif name == "LAB":
-            add_menu_button(body, "自己点検・成長案作成", lambda: run_growth_system(c_area), "#2563eb")
-            add_menu_button(body, "LAB成長トライアル", lambda: run_growth_trial_from_gui(c_area), "#7c3aed")
-            add_menu_button(body, "候補構文チェック", lambda: append_chat_bubble(c_area, "LAB", syntax_check_approved_candidate()))
-            add_menu_button(body, "反映前バックアップ", lambda: append_chat_bubble(c_area, "LAB", create_original_backup_for_adoption()))
-            add_menu_button(body, "オリジナルへ最終反映", lambda: append_chat_bubble(c_area, "LAB", apply_approved_candidate_to_original()), "#dc2626")
-            add_menu_button(body, "反映後チェック", lambda: append_chat_bubble(c_area, "LAB", verify_original_after_apply()), "#15803d")
-            add_menu_button(body, "反映診断", lambda: append_chat_bubble(c_area, "LAB", diagnose_adoption_system()))
+            # LABカテゴリは現在Phase 3システムで管理されています
+            pass))
 
         elif name == "Files":
             add_menu_button(body, "成功ログを開く", open_success_patterns_file, "#16a34a")
@@ -10223,9 +10218,6 @@ def open_naviko_menu_window(c_area):
             add_menu_button(body, "成長傾向分析", lambda: show_growth_trend(c_area))
             add_menu_button(body, "現在の目標", lambda: show_current_goal(c_area))
             add_menu_button(body, "目標を進める", lambda: advance_growth_goal(c_area))
-            add_menu_button(body, "v1.2診断", lambda: show_v12_core_dashboard(c_area))
-            add_menu_button(body, "v1.2整理", lambda: cleanup_v12_test_data_from_gui(c_area))
-            add_menu_button(body, "v1.2完成ログ", lambda: save_v12_final_report_from_gui(c_area))
             add_menu_button(body, "自律生成完了診断", lambda: run_autonomous_build_completion_diagnosis_from_gui(c_area))
             add_menu_button(body, "MissionBridge診断", lambda: diagnose_mission_bridge_from_gui(c_area), "#0f766e")
             add_menu_button(body, "MissionManager v1完成保存", lambda: save_mission_manager_v1_report_from_gui(c_area), "#166534")
