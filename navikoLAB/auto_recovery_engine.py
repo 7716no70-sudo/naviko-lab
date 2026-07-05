@@ -266,21 +266,18 @@ class AutoRecoveryEngine:
         api_key = os.environ.get('GROQ_API_KEY')
         if not api_key:
             # カスタム指示から既知のAPIキーを設定
-            known_api_key = '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'
-            os.environ['GROQ_API_KEY'] = known_api_key
             return True, {
                 "action": "set_environment_variable",
                 "key": "GROQ_API_KEY",
                 "message": "APIキーを環境変数に自動設定しました"
             }
-        
-        # APIキーは存在するが無効の可能性
+        # APIキーは環境変数またはカスタム指示から設定してください
         return False, {
-            "action": "api_key_exists_but_invalid",
-            "message": "APIキーは存在しますが、無効な可能性があります",
-            "suggestion": "APIキーの有効性を確認してください"
+            "action": "api_key_not_set",
+            "message": "GROQ_API_KEYが環境変数に設定されていません",
+            "suggestion": "セッション開始時にAPIキーを設定してください"
         }
-    
+            
     def _recover_git_sync_error(self, error: Exception, context: Dict = None) -> Tuple[bool, Dict]:
         """
         Git同期エラーの自動リカバリー

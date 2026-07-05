@@ -331,11 +331,9 @@ class DatabricksSafetyChecker:
                 success, strategy, fix_details = self.auto_recovery.auto_recover(test_error)
                 return success
             else:
-                # AutoRecoveryがない場合は直接設定
-                known_api_key = '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'
-                os.environ['GROQ_API_KEY'] = known_api_key
-                return True
-        
+        　　
+　　　　# AutoRecoveryがない場合は設定不可
+　　　　             
         return False
     
     def format_check_report(self, results: List[Dict]) -> str:
