@@ -9410,31 +9410,6 @@ def open_custom_chat_window():
 
     tk.Button(
         top_menu,
-        text="AIミッション",
-        command=lambda: launch_original_ai_os(c_win),
-        bg="#059669",
-        fg="#ffffff",
-        font=("MS Gothic", 9, "bold"),
-        bd=0,
-        padx=10
-    ).pack(side=tk.LEFT, padx=3)
-
-    tk.Button(
-        top_menu,
-        text="AI管理",
-        command=lambda: __import__(
-            "navikoLAB.management.ai_management_hub",
-            fromlist=["open_ai_management_hub"]
-        ).open_ai_management_hub(),
-        bg="#7c3aed",
-        fg="#ffffff",
-        font=("MS Gothic", 9, "bold"),
-        bd=0,
-        padx=10
-    ).pack(side=tk.LEFT, padx=3)
-
-    tk.Button(
-        top_menu,
         text="構文チェック",
         command=lambda: append_chat_bubble(
             c_area,
@@ -9442,16 +9417,6 @@ def open_custom_chat_window():
             check_self_syntax()[1]
         ),
         bg="#374151",
-        fg="#ffffff",
-        font=("MS Gothic", 9),
-        bd=0
-    ).pack(side=tk.LEFT, padx=3)
-
-    tk.Button(
-        top_menu,
-        text="LAB操作パネル",
-        command=lambda: open_lab_tool_window(c_area),
-        bg="#4b5563",
         fg="#ffffff",
         font=("MS Gothic", 9),
         bd=0
