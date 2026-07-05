@@ -331,10 +331,8 @@ class DatabricksSafetyChecker:
                 success, strategy, fix_details = self.auto_recovery.auto_recover(test_error)
                 return success
             else:
-        　　
-　　　　# AutoRecoveryがない場合は設定不可
-　　　　             
-        return False
+                # AutoRecoveryがない場合は設定不可
+                return False
     
     def format_check_report(self, results: List[Dict]) -> str:
         """
