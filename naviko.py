@@ -9149,19 +9149,7 @@ def open_lab_tool_window(c_area):
     frame = tk.Frame(tool_win, bg="#1f2937")
     frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    buttons = [
-        ("本番用1行パッチ作成", lambda: create_test_real_line_patch_from_gui(c_area)),
-        ("最新1行パッチ確認", lambda: show_latest_line_patch_from_gui(c_area)),
-        ("最新1行パッチを承認", lambda: approve_latest_line_patch_from_gui(c_area)),
-        ("最新承認済み1行パッチ確認", lambda: show_latest_approved_line_patch_from_gui(c_area)),
-        ("承認済みパッチ整理", lambda: cleanup_approved_line_patches_from_gui(c_area)),
-        ("1行パッチ統合診断", lambda: run_line_patch_full_precheck_diagnosis_from_gui(c_area)),
-        ("未処理承認済みパッチ一覧",lambda:show_pending_approved_line_patches_from_gui(c_area)),
-        ("診断用パッチ一括整理",lambda:block_diagnosis_line_patches_from_gui(c_area)),
-        ("LAB v1.1 総合診断",lambda:run_lab_v11_final_diagnosis_from_gui(c_area)),
-        ("自己改善許可レベル",lambda:show_self_improvement_permission_level_from_gui(c_area)),
-        ("LAB v1.1 完成ログ保存",lambda:save_lab_v11_final_report_from_gui(c_area)),
-    ]
+    buttons = []
 
     for text, command in buttons:
         tk.Button(
