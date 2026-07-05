@@ -98,7 +98,6 @@ REJECT_PATTERN_FILE = ROOT / "reject_patterns.json"
 GROWTH_REPORT_FILE = ROOT / "growth_report.json"
 GUI_LAYOUT_FILE = ROOT / "gui_layout.json"
 
-
 # =========================
 # ナビ子LAB設定
 # =========================
@@ -165,7 +164,6 @@ improvement_manager = ImprovementManager(LAB_DIR)
 mission_bridge = MissionBridge(LAB_DIR)
 growth_bridge = NavikoSelfGrowthBridge()
 
-
 # === 新しい自己改善モジュール ===
 experience_memory = ExperienceMemory(lab_dir=LAB_DIR)
 error_diagnostic_engine = ErrorDiagnosticEngine(
@@ -173,8 +171,6 @@ error_diagnostic_engine = ErrorDiagnosticEngine(
     experience_memory=experience_memory
 )
 process_recorder = ProcessRecorder(lab_dir=LAB_DIR)
-
-
 
 autonomous_core = AutonomousCore(
     LAB_DIR,
@@ -188,7 +184,6 @@ autonomous_core = AutonomousCore(
 )
 
 # =====================
-
 
 def diagnose_and_handle_error(error, context=None):
     """
@@ -281,7 +276,6 @@ pet_vars = {
 
 raw_frames = {}
 tk_frames = {}
-
 
 def run_gui_app_project_builder():
     try:
@@ -805,7 +799,6 @@ def run_autonomous_build_from_gui():
             agent_result
         )
 
-
         message = ""
         message += "=== Autonomous Build ===\n\n"
 
@@ -856,7 +849,6 @@ def run_autonomous_build_from_gui():
         elif "chat_log" in globals():
             chat_log.insert("end", "\n【ナビ子】\n" + error + "\n")
             chat_log.see("end")
-
 
 def build_app_with_latest_improvement_from_gui(c_area=None):
     try:
@@ -913,7 +905,6 @@ def build_app_with_latest_improvement_from_gui(c_area=None):
             "success": False,
             "error": str(e)
         }
-
 
 def diagnose_improvement_manager_from_gui(c_area=None):
     diagnosis = improvement_manager.diagnose()
@@ -976,7 +967,6 @@ def save_v135_completion_report():
         f"保存先:\n{report_file}"
     )
 
-
 def save_v135_completion_report_from_gui(c_area=None):
     message = save_v135_completion_report()
 
@@ -997,7 +987,6 @@ def load_json(path, default):
             return json.load(f)
     except Exception:
         return default
-
 
 def run_agent_manager_from_gui(c_area=None):
     try:
@@ -1054,8 +1043,6 @@ def run_agent_manager_from_gui(c_area=None):
             append_chat_bubble(c_area, "navi", message)
 
         return message
-
-
 
 def create_original_learning_advice():
     report = create_growth_report()
@@ -1354,7 +1341,6 @@ def list_approved_line_patches():
 
     return "\n".join(lines)
 
-
 def show_approved_line_patches_from_gui(c_area=None):
     """
     承認済み1行パッチ一覧をGUIチャット欄に表示する。
@@ -1491,7 +1477,6 @@ def check_latest_approved_line_patch_for_original():
         f"プレビュー保存: {preview_file}\n"
         "※ オリジナル naviko.py にはまだ反映していません。"
     )
-
 
 def check_latest_approved_line_patch_for_original_from_gui(c_area=None):
     """
@@ -1957,7 +1942,6 @@ def create_artifact_reflection_for_latest_improvement_build():
 
     return "\n".join(lines)
 
-
 def create_artifact_reflection_for_latest_improvement_build_from_gui(c_area=None):
     message = create_artifact_reflection_for_latest_improvement_build()
 
@@ -2092,7 +2076,6 @@ def evaluate_latest_improvement_success():
 
     return "\n".join(lines)
 
-
 def evaluate_latest_improvement_success_from_gui(c_area=None):
     message = evaluate_latest_improvement_success()
 
@@ -2161,7 +2144,6 @@ def create_retry_improvement_request_from_latest_result():
         lines.append(f"- {item}")
 
     return "\n".join(lines)
-
 
 def create_retry_improvement_request_from_latest_result_from_gui(c_area=None):
     message = create_retry_improvement_request_from_latest_result()
@@ -2260,7 +2242,6 @@ def create_improvement_request_from_latest_reflection():
         lines.append(f"- {item}")
 
     return "\n".join(lines)
-
 
 def create_improvement_request_from_latest_reflection_from_gui(c_area=None):
     message = create_improvement_request_from_latest_reflection()
@@ -2515,7 +2496,6 @@ def apply_latest_approved_line_patch_to_original_safely():
         "成功パターン: 学習済み"
     )
 
-
 def apply_latest_approved_line_patch_to_original_safely_from_gui(c_area=None):
     """
     GUIから最新承認済み1行パッチをオリジナルへ安全反映する。
@@ -2566,7 +2546,6 @@ def cleanup_approved_line_patches():
         f"反映済み/blocked: {skipped}\n"
         f"未処理: {active}"
     )
-
 
 def show_pending_approved_line_patches():
     """
@@ -2992,7 +2971,6 @@ def diagnose_agent_manager_from_gui(c_area=None):
 
         return message
 
-
 def show_pending_approved_line_patches_from_gui(
     c_area=None
 ):
@@ -3071,7 +3049,6 @@ def block_diagnosis_line_patches():
         "=== 診断用パッチ一括整理 ===\n"
         f"blocked にした件数: {blocked_count}"
     )
-
 
 def block_diagnosis_line_patches_from_gui(c_area=None):
     message = block_diagnosis_line_patches()
@@ -3162,7 +3139,6 @@ def run_lab_v11_final_diagnosis():
 
     return "\n".join(lines)
 
-
 def run_lab_v11_final_diagnosis_from_gui(c_area=None):
     message = run_lab_v11_final_diagnosis()
 
@@ -3202,7 +3178,6 @@ def save_lab_v11_final_report():
         "=== LAB v1.1 完成ログ保存 ===\n"
         f"保存先:\n{report_file}"
     )
-
 
 def save_lab_v11_final_report_from_gui(c_area=None):
     message = save_lab_v11_final_report()
@@ -3281,7 +3256,6 @@ def run_line_patch_full_precheck_diagnosis():
     lines.append("※ 実際のオリジナル naviko.py には反映していません。")
 
     return "\n".join(lines)
-
 
 def run_line_patch_full_precheck_diagnosis_from_gui(c_area=None):
     message = run_line_patch_full_precheck_diagnosis()
@@ -3484,7 +3458,6 @@ def list_original_naviko_functions():
 
     return "\n".join(lines)
 
-
 def show_original_naviko_functions_from_gui(c_area=None):
     message = list_original_naviko_functions()
 
@@ -3629,7 +3602,6 @@ def decide_self_improvement_permission_level():
         "continuous_failures": continuous_failures,
     }
 
-
 def format_self_improvement_permission_level():
     result = decide_self_improvement_permission_level()
 
@@ -3642,7 +3614,6 @@ def format_self_improvement_permission_level():
         f"ロールバック数: {result.get('rollback_count')}\n"
         f"連続失敗数: {result.get('continuous_failures')}"
     )
-
 
 def show_self_improvement_permission_level_from_gui(c_area=None):
     message = format_self_improvement_permission_level()
@@ -3669,7 +3640,6 @@ def is_forbidden_growth(text):
 
     return False
 
-
 def detect_forbidden_reasons(text):
     if not isinstance(text, str):
         return ["文字列ではないため危険"]
@@ -3684,7 +3654,6 @@ def detect_forbidden_reasons(text):
             )
 
     return reasons
-
 
 def score_patch_suggestion(patch_text):
     reasons = detect_forbidden_reasons(patch_text)
@@ -3987,7 +3956,6 @@ def print_growth_report(report):
     print(f"直近成功率: {adoption_analysis.get('recent_success_rate', 0)}%")
     print(f"連続失敗数: {adoption_analysis.get('continuous_failures', 0)}")
 
-
 def learn_success_patterns():
     patterns = load_json(SUCCESS_PATTERN_FILE, [])
 
@@ -4174,7 +4142,6 @@ def save_v12_final_report_from_gui(c_area=None):
     print(message)
     return message
 
-
 def decide_growth_strategy():
     report = analyze_growth_history()
     adoption_report = analyze_adoption_history()
@@ -4222,7 +4189,6 @@ def decide_growth_strategy():
         return "発展的改善"
 
     return "通常方針"
-
 
 def run_growth_trial():
     print("=== ナビ子LAB 成長トライアル開始 ===")
@@ -5015,7 +4981,6 @@ def detect_candidate_type(content):
     if limited_patch:
         return "限定差分パッチ"
 
-
     if not isinstance(content, str):
         return "不明"
 
@@ -5119,14 +5084,12 @@ def select_patch_for_original_naviko():
         "backup_created": False,
     }
 
-
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
     return request
 
 def syntax_check_approved_candidate():
     import py_compile
-
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5158,7 +5121,6 @@ def syntax_check_approved_candidate():
         request["status"] = "limited_patch_checked" if ok else "limited_patch_blocked"
         request["candidate_type"] = candidate_type
         request["limited_patch"] = detect_limited_diff_patch(content)
-
 
         return (
             "限定差分パッチを検出しました。\n\n"
@@ -5193,7 +5155,6 @@ def syntax_check_approved_candidate():
     request["syntax_checked_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "syntax_checked"
 
-
     return (
         "構文チェック成功。\n"
         "この候補はPythonコードとして成立しています。\n"
@@ -5202,7 +5163,6 @@ def syntax_check_approved_candidate():
 
 def create_original_backup_for_adoption():
     import shutil
-
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5226,7 +5186,6 @@ def create_original_backup_for_adoption():
     request["backup_file"] = str(backup_file)
     request["backup_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["status"] = "backup_created"
-
 
     return (
         "オリジナル naviko.py のバックアップを作成しました。\n"
@@ -5311,7 +5270,6 @@ def detect_limited_diff_patch(content):
 
     except Exception:
         return None
-
 
 def format_limited_patch_info(patch_info):
     if not patch_info:
@@ -5697,7 +5655,6 @@ def apply_approved_candidate_to_original():
         else:
             request["status"] = "limited_patch_blocked"
 
-
         replace_ok, replace_result = apply_limited_function_replacement(content)
 
         if replace_ok:
@@ -5719,7 +5676,6 @@ def apply_approved_candidate_to_original():
                 request["applied_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
                 request["applied_to"] = str(original_file)
                 request["apply_mode"] = "limited_function_replacement"
-
 
                 return (
                     "限定差分パッチをオリジナル naviko.py に反映しました。\n"
@@ -5748,13 +5704,11 @@ def apply_approved_candidate_to_original():
         request["status"] = "apply_blocked_by_candidate_type"
         request["candidate_type"] = candidate_type
 
-
         return (
             "最終反映を停止しました。\n"
             f"候補タイプ: {candidate_type}\n"
             "この候補は naviko.py にそのまま反映できません。"
         )
-    
     
     print("=== candidate content preview ===")
     print("candidate_file =", candidate_file)
@@ -5775,7 +5729,6 @@ def apply_approved_candidate_to_original():
         request["applied"] = False
         request["cancelled_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-
         return "最終反映はキャンセルされました。"
 
     original_file.write_text(
@@ -5788,7 +5741,6 @@ def apply_approved_candidate_to_original():
     request["applied_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["applied_to"] = str(original_file)
 
-
     return (
         "承認済み候補をオリジナル naviko.py に反映しました。\n"
         f"反映先: {original_file}\n"
@@ -5798,7 +5750,6 @@ def apply_approved_candidate_to_original():
 def verify_original_after_apply():
     import py_compile
     import shutil
-
 
     if not request:
         return "adoption_request.json が見つかりません。"
@@ -5851,7 +5802,6 @@ def verify_original_after_apply():
                     "selected_file": request.get("selected_file")
                 })
 
-
                 return (
                     "反映後チェック失敗。\n"
                     "オリジナル naviko.py に構文エラーがありました。\n\n"
@@ -5871,7 +5821,6 @@ def verify_original_after_apply():
             "startup_test": True,
             "rollback": False
         })
-
 
         return (
             "反映後チェック失敗。\n"
@@ -5916,7 +5865,6 @@ def verify_original_after_apply():
                     "error": request.get("verify_error")
                 })
 
-
                 return (
                     "構文チェックは成功しましたが、起動テストに失敗しました。\n\n"
                     f"{startup_msg}\n\n"
@@ -5956,7 +5904,6 @@ def verify_original_after_apply():
     request["verify_date"] = time.strftime("%Y-%m-%d %H:%M:%S")
     request["rollback"] = False
 
-
     return (
         "反映後チェック成功。\n"
         "オリジナル naviko.py は構文上問題ありません。\n"
@@ -5964,13 +5911,11 @@ def verify_original_after_apply():
         "自動ロールバックは不要でした。"
     )
 
-
 def open_rejected_patches_folder():
     try:
         os.startfile(REJECTED_DIR)
     except Exception as e:
         print(f"却下フォルダを開けませんでした: {e}")
-
 
 def open_growth_report_file():
     try:
@@ -5983,7 +5928,6 @@ def open_success_patterns_file():
         os.startfile(SUCCESS_PATTERN_FILE)
     except Exception as e:
         print(f"成功パターンログを開けませんでした: {e}")
-
 
 def open_reject_patterns_file():
     try:
@@ -6038,7 +5982,6 @@ def count_experience(event):
 
     return count
 
-
 def compress_experience_log():
     experience_summary["thanks_count"] = count_experience(
         "thanks"
@@ -6057,7 +6000,6 @@ def compress_experience_log():
     )
 
     notes = []
-
 
     if experience_summary["thanks_count"] >= 10:
         notes.append(
@@ -6169,7 +6111,6 @@ character = load_json(CHARACTER_FILE, {
 })
 
 growth_log = load_json(GROWTH_LOG_FILE, [])
-
 
 growth_history = load_json(
     GROWTH_HISTORY_FILE,
@@ -6379,7 +6320,6 @@ cautious が10以上なら、危険そうな提案には代替案を出す。
 自己改造、削除、外部送信、課金、実行系の提案には特に慎重にする。
 危険そうな案は、安全な代替案に置き換える。
 
-
 温かさが高い場合:
 冷たい口調は維持するが、ナオさんへの気遣いを少し増やす。
 感謝された時や挨拶された時は、突き放さず自然に返す。
@@ -6411,7 +6351,6 @@ def is_greeting(text):
         word in text
         for word in greetings
     )
-
 
 def is_thanks(text):
     thanks_words = [
@@ -6546,7 +6485,6 @@ def create_special_reply(user_text):
         return "…バックアップを作成します。少々お待ちください。"
 
     return None
-
 
 def adjust_reply_by_personality(reply):
     if not isinstance(reply, str):
@@ -6727,7 +6665,6 @@ def remember_conversation(user_text, reply_text):
         100
     )
 
-
     fatigue = profile["emotion"].get("fatigue", 0)
 
     if fatigue >= 60:
@@ -6766,7 +6703,6 @@ def backup_self():
     backup_path = BACKUP_DIR / f"naviko_backup_{timestamp}.py"
     shutil.copy2(SELF_FILE, backup_path)
     return backup_path
-
 
 def check_self_syntax():
     try:
@@ -6810,7 +6746,6 @@ def create_line_diff_preview(old_text, new_text):
     ))
 
     return "\n".join(diff_lines)
-
 
 def test_line_diff_preview():
     """
@@ -7744,7 +7679,6 @@ def create_ai_patch_suggestion(goal=None, strategy=None, success_pattern=None, r
 成功しやすい改善パターン:
 {success_pattern}
 
-
 以下のコードを読んで、ナビ子を改善するためのパッチ案を作ってください。
 
 禁止:
@@ -7866,7 +7800,6 @@ def call_groq(prompt):
         print("Groqエラー:", e)
         return None
 
-
 def create_growth_suggestion():
     source_code = SELF_FILE.read_text(
         encoding="utf-8",
@@ -7954,7 +7887,6 @@ def create_growth_suggestion():
             "今回は採用しません。"
         )
 
-
     timestamp = time.strftime("%Y%m%d_%H%M%S")
 
     suggestion_path = PATCH_DIR / f"growth_suggestion_{timestamp}.txt"
@@ -7970,7 +7902,6 @@ def create_growth_suggestion():
     save_json(GROWTH_LOG_FILE, growth_log)
 
     return suggestion_path, result
-
 
 def analyze_self_status():
     profile.setdefault("emotion", {})
@@ -8043,7 +7974,6 @@ def analyze_self_status():
     )
 
     return report_path, report_text
-
 
 def analyze_growth_trend():
     if not growth_history:
@@ -8137,8 +8067,6 @@ def analyze_growth_trend():
         )
     )
 
-
-
     if suggestions:
         growth_goal["current_goal"] = suggestions[0]
         growth_goal["created_at"] = time.strftime(
@@ -8164,7 +8092,6 @@ def run_self_test():
     print("SELF_TEST_OK")
     return True
 
-
 if "--self-test" in sys.argv:
     result = run_self_test()
 
@@ -8172,7 +8099,6 @@ if "--self-test" in sys.argv:
         raise SystemExit(0)
 
     raise SystemExit(1)
-
 
 print("=== ナビ子LAB・自己成長システム 起動チェック ===")
 if not SPRITESHEET.exists():
@@ -8219,7 +8145,6 @@ except Exception:
 
 root.geometry(f"{BASE_WIDTH}x{BASE_HEIGHT}+500+300")
 
-
 sheet = Image.open(SPRITESHEET).convert("RGBA")
 
 for name, (row, total) in states_config.items():
@@ -8230,7 +8155,6 @@ for name, (row, total) in states_config.items():
         x_pos = col * BASE_WIDTH
         cropped = sheet.crop((x_pos, y_pos, x_pos + BASE_WIDTH, y_pos + BASE_HEIGHT))
         raw_frames[name].append(cropped)
-
 
 def resize_pet_images(scale_val):
     global tk_frames
@@ -8247,12 +8171,10 @@ def resize_pet_images(scale_val):
             resized = img.resize((w_size, h_size), Image.Resampling.NEAREST)
             tk_frames[name].append(ImageTk.PhotoImage(resized))
 
-
 resize_pet_images(current_scale)
 
 pet_label = tk.Label(root, bg="#00ff00")
 pet_label.pack(fill=tk.BOTH, expand=True)
-
 
 def start_drag(event):
     pet_vars["drag_x"] = event.x
@@ -8474,7 +8396,6 @@ def run_animation_loop():
                     f"…ナオさん。初めて目標を達成してから、もう{days}日なんですね。"
                 )
 
-
         memory_day = anniversary.get(
             "memory_10_day",
             ""
@@ -8523,7 +8444,6 @@ def on_drag(event):
 
     root.geometry(f"+{root.winfo_x() + dx}+{root.winfo_y() + dy}")
 
-
 def end_drag(event):
     if pet_vars["is_dragging"]:
         pet_vars["state"] = "idle"
@@ -8533,13 +8453,11 @@ def end_drag(event):
         pet_vars["frame"] = 0
         open_custom_chat_window()
 
-
 def change_scale_menu(size_factor):
     global current_scale
     current_scale = size_factor
     resize_pet_images(current_scale)
     pet_vars["frame"] = 0
-
 
 def append_chat_bubble(area_widget, sender, message_text):
     area_widget.configure(state="normal")
@@ -8559,7 +8477,6 @@ def append_chat_bubble(area_widget, sender, message_text):
     area_widget.see(tk.END)
     area_widget.configure(state="disabled")
 
-
 def get_default_gui_layout():
     """
     デフォルトのGUIレイアウト設定を返す
@@ -8574,7 +8491,6 @@ def get_default_gui_layout():
         "chat_bg": "#2d2d2d",
         "fg_color": "#ffffff"
     }
-
 
 def load_gui_layout_settings():
     """
@@ -8599,7 +8515,6 @@ def load_gui_layout_settings():
         print(f"レイアウト設定の読み込みエラー: {e}")
         return get_default_gui_layout()
 
-
 def save_gui_layout_settings(settings):
     """
     GUIレイアウト設定をgui_layout.jsonに保存
@@ -8611,7 +8526,6 @@ def save_gui_layout_settings(settings):
     except Exception as e:
         print(f"レイアウト設定の保存エラー: {e}")
         return False
-
 
 def open_layout_settings_dialog(parent_window):
     """
@@ -8726,7 +8640,6 @@ def open_layout_settings_dialog(parent_window):
         pady=5
     ).pack()
 
-
 def start_voice_recognition(entry_w, area_w):
     """
     音声認識を開始し、認識したテキストを入力フィールドに挿入
@@ -8818,7 +8731,6 @@ def start_voice_recognition(entry_w, area_w):
     # 別スレッドで音声認識を実行（GUIブロックを防ぐ）
     thread = threading.Thread(target=recognition_thread, daemon=True)
     thread.start()
-
 
 def execute_groq_communication(entry_w, paste_w, area_w):
     # entry_wがScrolledTextかEntryかを判定
@@ -8914,8 +8826,6 @@ def execute_groq_communication(entry_w, paste_w, area_w):
 
     threading.Thread(target=worker, daemon=True).start()
 
-
-
 def run_growth_system(area_w):
     append_chat_bubble(area_w, "navi", "…はぁ。自己点検を始めます。壊さない範囲で。")
     pet_vars["state"] = "review"
@@ -8937,7 +8847,6 @@ def run_growth_system(area_w):
         root.after(0, update_ui)
 
     threading.Thread(target=worker, daemon=True).start()
-
 
 def show_self_analysis(area_w):
     report_path, report_text = analyze_self_status()
@@ -9216,7 +9125,6 @@ def open_memory_editor(area_w):
         "現在の記憶ファイル memory.json を使っています。直接編集できます。"
     )
 
-
 def show_text_window(title, text):
     win = tk.Toplevel()
     win.title(title)
@@ -9284,7 +9192,6 @@ def clear_widget_children(widget):
     for child in widget.winfo_children():
         child.destroy()
 
-
 def add_action_button(parent, text, command):
     btn = tk.Button(
         parent,
@@ -9298,7 +9205,6 @@ def add_action_button(parent, text, command):
         pady=2
     )
     return btn
-
 
 def show_gui_menu_category(category, target_frame, c_area=None):
     clear_widget_children(target_frame)
@@ -9415,9 +9321,6 @@ def show_gui_menu_category(category, target_frame, c_area=None):
             lambda: save_v13_completion_report_from_gui(c_area)
         )
 
-
-
-
 # === Original Naviko LAB Bridge caller ===
 def run_original_lab_autonomous_flow_from_naviko(user_goal):
     """
@@ -9441,7 +9344,6 @@ def run_original_lab_autonomous_flow_from_naviko(user_goal):
             "user_goal": user_goal,
         }
 # === Original Naviko LAB Bridge caller end ===
-
 
 def open_custom_chat_window():
     if pet_vars["chat_win"] and pet_vars["chat_win"].winfo_exists():
@@ -9521,7 +9423,6 @@ def open_custom_chat_window():
         bd=0,
         padx=10
     ).pack(side=tk.LEFT, padx=3)
-
 
     tk.Button(
         top_menu,
@@ -9920,8 +9821,6 @@ def launch_original_ai_os(parent_window, mission=None):
             result["workspace_save_result"] = workspace_save_result
             result["app_operator_readonly_result"] = readonly_result
 
-
-
         if isinstance(result, dict):
             result["app_operator_readonly_result"] = readonly_result
 
@@ -9953,7 +9852,6 @@ def launch_original_ai_os(parent_window, mission=None):
             )
 
         raise
-
 
 def add_menu_button(parent, text, command, bg="#374151"):
     tk.Button(
@@ -10064,7 +9962,6 @@ def save_mission_manager_v1_report_from_gui(c_area):
             f"MissionManager v1 完成レポート保存エラー: {e}"
         )
 
-
 def diagnose_mission_bridge_from_gui(c_area):
 
     try:
@@ -10128,9 +10025,6 @@ def show_capability_gui_from_gui(c_area):
             "Capability",
             f"Capability GUI エラー: {e}"
         )
-
-
-
 
 def open_naviko_menu_window(c_area):
     menu_win = tk.Toplevel(root)
@@ -10202,7 +10096,6 @@ def open_naviko_menu_window(c_area):
             add_menu_button(body, "Agent統合診断", lambda: run_agent_manager_integration_diagnosis_from_gui(c_area))
 
         elif name == "LAB":
-            # LABカテゴリは現在Phase 3システムで管理されています
             # LABカテゴリは現在Phase 3システムで管理されています
             pass
 
@@ -10301,7 +10194,6 @@ def select_patch_for_original_naviko():
         "summary": best_content[:500]
     }
 
-
     print(f"オリジナル反映候補を選定しました: {best_file.name}")
 
     return request
@@ -10348,7 +10240,6 @@ def select_patch_for_original_naviko_from_gui(c_area=None):
         "rollback": False
     }
 
-
     if c_area:
         append_chat_bubble(
             c_area,
@@ -10371,7 +10262,6 @@ pet_label.bind("<Button-1>", start_drag)
 pet_label.bind("<B1-Motion>", on_drag)
 pet_label.bind("<ButtonRelease-1>", end_drag)
 pet_label.bind("<Button-3>", lambda e: right_menu.post(e.x_root, e.y_root))
-
 
 print("-> ナビ子を起動します。")
 
