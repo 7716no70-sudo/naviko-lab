@@ -68,10 +68,12 @@ class CapabilityRouter:
         planner = TaskPlanner(self.root_dir)
         plan = planner.create_plan(purpose)
 
-        capability_feedback = adapt_capability_selection_with_feedback(
-            plan,
-            required_ids,
-        )
+        # DISABLED: planner_feedback module removed
+        # capability_feedback = adapt_capability_selection_with_feedback(
+        #     plan,
+        #     required_ids,
+        # )
+        capability_feedback = {}  # Fallback to empty dict
 
         selected = []
         missing = []

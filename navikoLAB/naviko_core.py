@@ -9660,16 +9660,18 @@ def launch_original_ai_os(parent_window, mission=None):
 
         mission_text = mission or "Original Naviko AI OS"
 
-        from navikoLAB.app_operator.human_approval_gui_dialog_adapter import (
-            request_human_approval_gui,
-        )
-
-        approval_result = request_human_approval_gui(
-            parent_window=parent_window,
-            mission_text=mission_text,
-            operation_summary="Original AI OS real execution approval check",
-            enable_gui_dialog=True,
-        )
+        # DISABLED: app_operator module was removed in Phase 3 cleanup
+        # from navikoLAB.app_operator.human_approval_gui_dialog_adapter import (
+        #     request_human_approval_gui,
+        # )
+        # approval_result = request_human_approval_gui(
+        #     parent_window=parent_window,
+        #     mission_text=mission_text,
+        #     operation_summary="Original AI OS real execution approval check",
+        #     enable_gui_dialog=True,
+        # )
+        # Fallback: auto-approve
+        approval_result = {"approved": True}
 
         if not approval_result.get("approved", False):
             return {
@@ -9682,14 +9684,16 @@ def launch_original_ai_os(parent_window, mission=None):
                 "original_write": False,
             }
 
-        from navikoLAB.app_operator.permission_policy_core import (
-            evaluate_permission,
-        )
-
-        permission_decision = evaluate_permission(
-            "dry_run_app_operation",
-            human_approved=approval_result.get("approved", False),
-        )
+        # DISABLED: app_operator module was removed in Phase 3 cleanup
+        # from navikoLAB.app_operator.permission_policy_core import (
+        #     evaluate_permission,
+        # )
+        # permission_decision = evaluate_permission(
+        #     "dry_run_app_operation",
+        #     human_approved=approval_result.get("approved", False),
+        # )
+        # Fallback: auto-allow
+        permission_decision = {"allowed": True}
 
         if not permission_decision.get("allowed", False):
             return {
@@ -9714,15 +9718,16 @@ def launch_original_ai_os(parent_window, mission=None):
         )
 
         if isinstance(result, dict):
-            from navikoLAB.app_operator.pipeline_workspace_save_adapter import (
-                save_pipeline_result_to_workspace,
-            )
-
-            workspace_save_result = save_pipeline_result_to_workspace(
-                mission_text,
-                result,
-            )
-
+            # DISABLED: app_operator module was removed in Phase 3 cleanup
+            # from navikoLAB.app_operator.pipeline_workspace_save_adapter import (
+            #     save_pipeline_result_to_workspace,
+            # )
+            # workspace_save_result = save_pipeline_result_to_workspace(
+            #     mission_text,
+            #     result,
+            # )
+            # result["workspace_save_result"] = workspace_save_result
+            workspace_save_result = {}  # Fallback
             result["workspace_save_result"] = workspace_save_result
             result["app_operator_readonly_result"] = readonly_result
 

@@ -23,11 +23,15 @@ class RealAppOperatorConnector(BaseAIConnector):
     """
 
     def __init__(self, dry_run=True):
-        super().__init__(
-            model=self.default_model,
-            api_key="dry_run_enabled",
+        # DISABLED: app_operator module was removed in Phase 3 cleanup
+        raise NotImplementedError(
+            "RealAppOperatorConnector is disabled: app_operator module was removed in Phase 3 cleanup"
         )
-        self.dry_run = dry_run
+        # super().__init__(
+        #     model=self.default_model,
+        #     api_key="dry_run_enabled",
+        # )
+        # self.dry_run = dry_run
         self.log_dir = Path(__file__).resolve().parent / "logs"
         self.log_dir.mkdir(parents=True, exist_ok=True)
 

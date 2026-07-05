@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
 from datetime import datetime
-from navikoLAB.planner_feedback.planner_feedback_adapter import (
-    build_task_planner_feedback,
-)
-from navikoLAB.planner_feedback.experience_based_planning_scorer import (
-    score_plan_with_experience,
-)
+# DISABLED: planner_feedback module was removed in Phase 3 cleanup
+# from navikoLAB.planner_feedback.planner_feedback_adapter import (
+#     build_task_planner_feedback,
+# )
+# from navikoLAB.planner_feedback.experience_based_planning_scorer import (
+#     score_plan_with_experience,
+# )
 
 class TaskPlanner:
     def __init__(self, root_dir, agent_registry=None):
@@ -155,7 +156,8 @@ class TaskPlanner:
 
         plan["experience_based_planning"] = True
 
-        plan = score_plan_with_experience(plan)
+        # DISABLED: planner_feedback module removed
+        # plan = score_plan_with_experience(plan)
 
         return plan
 
