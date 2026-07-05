@@ -10204,6 +10204,8 @@ def open_naviko_menu_window(c_area):
         elif name == "LAB":
             # LABカテゴリは現在Phase 3システムで管理されています
             pass
+            # LABカテゴリは現在Phase 3システムで管理されています
+            pass
 
         elif name == "Files":
             add_menu_button(body, "成功ログを開く", open_success_patterns_file, "#16a34a")
