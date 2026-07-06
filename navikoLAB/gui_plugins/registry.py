@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 ﻿# -*- coding: utf-8 -*-
+=======
+# -*- coding: utf-8 -*-
+>>>>>>> Stashed changes
 """
 Naviko GUI Plugin System - プラグインレジストリ
 
@@ -187,7 +191,44 @@ class PluginRegistry:
         print("⚠️  プラグインレジストリをリセットしました。")
 
 
+<<<<<<< Updated upstream
 # プラグインシステムのバージョン情報
 __version__ = "1.0.0"
 __author__ = "Naviko Development Team"
 __all__ = ["PluginRegistry"]
+=======
+def register_default_plugins() -> None:
+    """
+    デフォルトプラグインを登録
+    
+    DefaultSpriteRenderer と ConversationalChat を自動登録します。
+    Navikoシステム起動時に一度だけ呼び出してください。
+    """
+    from .renderers.default_sprite import DefaultSpriteRenderer
+    from .chat_displays.conversational import ConversationalChat
+    
+    registry = PluginRegistry.get_instance()
+    
+    # デフォルトプラグイン登録
+    try:
+        registry.register_character_renderer("DefaultSprite", DefaultSpriteRenderer)
+    except ValueError:
+        # 既に登録済みの場合はスキップ
+        pass
+    
+    try:
+        registry.register_chat_display("Conversational", ConversationalChat)
+    except ValueError:
+        # 既に登録済みの場合はスキップ
+        pass
+    
+    print("📦 デフォルトプラグイン登録完了")
+    print(f"   - キャラクターレンダラー: {registry.list_character_renderers()}")
+    print(f"   - チャット表示: {registry.list_chat_displays()}")
+
+
+# プラグインシステムのバージョン情報
+__version__ = "1.0.0"
+__author__ = "Naviko Development Team"
+__all__ = ["PluginRegistry", "register_default_plugins"]
+>>>>>>> Stashed changes

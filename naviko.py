@@ -59,10 +59,36 @@ from navikoLAB.core.mission_bridge import MissionBridge
 from navikoLAB.capabilities.capability_gui_bridge import CapabilityGUIBridge
 from navikoLAB.naviko_self_growth_bridge import NavikoSelfGrowthBridge
 
+<<<<<<< Updated upstream
 # === 自己改善モジュール ===
 from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
 from navikoLAB.process_recorder import ProcessRecorder
+=======
+# === GUI Plugin System import ===
+try:
+    from navikoLAB.gui_plugins.config_manager import ConfigManager
+    from navikoLAB.gui_plugins.registry import PluginRegistry
+    from navikoLAB.gui_plugins.renderers.default_sprite import DefaultSpriteRenderer
+    from navikoLAB.gui_plugins.chat_displays.conversational import ConversationalChat
+    PLUGIN_SYSTEM_AVAILABLE = True
+    print("✅ GUIプラグインシステム利用可能")
+except ImportError as e:
+    PLUGIN_SYSTEM_AVAILABLE = False
+    print(f"⚠️ GUIプラグインシステム無効: {e}")
+# === GUI Plugin System import end ===
+
+# Phase 3モジュールインポート
+try:
+    from navikoLAB.system_health_monitor import SystemHealthMonitor
+    from navikoLAB.naviko_system_controller import NavikoSystemController
+    PHASE3_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Phase 3モジュールが見つかりません: {e}")
+    PHASE3_AVAILABLE = False
+    SystemHealthMonitor = None
+    NavikoSystemController = None
+>>>>>>> Stashed changes
 
 ROOT = Path(__file__).resolve().parent
 SELF_FILE = ROOT / "naviko.py"
@@ -8574,6 +8600,39 @@ def initialize_character_system():
 character_hub_enabled = initialize_character_system()
 # === Character Hub初期化終了 ===
 
+# GUIプラグインシステムのグローバルインスタンス
+gui_config = None
+plugin_registry = None
+character_renderer = None
+chat_display_plugin = None
+
+if PLUGIN_SYSTEM_AVAILABLE:
+    try:
+        # ConfigManager初期化
+        config_manager = ConfigManager(str(ROOT / "gui_config.json"))
+        gui_config = config_manager.load_config()
+        
+        # PluginRegistry初期化
+        plugin_registry = PluginRegistry()
+        
+        # プラグイン登録
+        plugin_registry.register_renderer("DefaultSprite", DefaultSpriteRenderer)
+        plugin_registry.register_chat_display("Conversational", ConversationalChat)
+        
+        print("✅ GUIプラグインシステム初期化完了")
+        
+        # キャラクターレンダラー初期化
+        renderer_config = gui_config["character_renderer"]
+        renderer_class = plugin_registry.get_renderer(renderer_config["type"])
+        character_renderer = renderer_class(renderer_config["config"])
+        print(f"✅ キャラクターレンダラー初期化: {renderer_config['type']}")
+        
+    except Exception as e:
+        print(f"⚠️ GUIプラグインシステム初期化失敗: {e}")
+        PLUGIN_SYSTEM_AVAILABLE = False
+else:
+    print("⚠️ GUIプラグインシステム無効（インポート失敗）")
+
 root = tk.Tk()
 root.title("NavikoPet")
 root.overrideredirect(True)
@@ -8587,6 +8646,7 @@ except Exception:
 
 root.geometry(f"{BASE_WIDTH}x{BASE_HEIGHT}+500+300")
 
+<<<<<<< Updated upstream
 
 # === スプライトシート読み込み ===
 if character_hub_enabled and character_loader:
@@ -8634,6 +8694,47 @@ resize_pet_images(current_scale)
 
 pet_label = tk.Label(root, bg="#00ff00")
 pet_label.pack(fill=tk.BOTH, expand=True)
+=======
+# キャラクター表示初期化（プラグインシステム使用）
+if PLUGIN_SYSTEM_AVAILABLE and character_renderer is not None:
+    # プラグインを使用してキャラクター表示初期化
+    character_renderer.initialize(root)
+    pet_label = character_renderer.get_widget()
+    print("✅ キャラクター表示: プラグイン使用")
+else:
+    # 既存コード（フォールバック）- プラグインが利用できない場合
+    sheet = Image.open(SPRITESHEET).convert("RGBA")
+    
+    for name, (row, total) in states_config.items():
+        raw_frames[name] = []
+        y_pos = row * BASE_HEIGHT
+    
+        for col in range(total):
+            x_pos = col * BASE_WIDTH
+            cropped = sheet.crop((x_pos, y_pos, x_pos + BASE_WIDTH, y_pos + BASE_HEIGHT))
+            raw_frames[name].append(cropped)
+    
+    def resize_pet_images(scale_val):
+        global tk_frames
+    
+        tk_frames = {}
+        w_size = int(BASE_WIDTH * scale_val)
+        h_size = int(BASE_HEIGHT * scale_val)
+    
+        root.geometry(f"{w_size}x{h_size}")
+    
+        for name, img_list in raw_frames.items():
+            tk_frames[name] = []
+            for img in img_list:
+                resized = img.resize((w_size, h_size), Image.Resampling.NEAREST)
+                tk_frames[name].append(ImageTk.PhotoImage(resized))
+    
+    resize_pet_images(current_scale)
+    
+    pet_label = tk.Label(root, bg="#00ff00")
+    pet_label.pack(fill=tk.BOTH, expand=True)
+    print("✅ キャラクター表示: 既存コード使用（フォールバック）")
+>>>>>>> Stashed changes
 
 
 def start_drag(event):

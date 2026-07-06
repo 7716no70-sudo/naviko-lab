@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 ﻿# -*- coding: utf-8 -*-
+=======
+# -*- coding: utf-8 -*-
+>>>>>>> Stashed changes
 """
 Naviko GUI Plugin System - 設定ファイル管理
 

@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 ﻿# -*- coding: utf-8 -*-
+=======
+# -*- coding: utf-8 -*-
+>>>>>>> Stashed changes
 """
 Naviko GUI Plugin System - 抽象基底クラス定義
 
