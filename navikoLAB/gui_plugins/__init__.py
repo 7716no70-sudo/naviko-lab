@@ -1,5 +1,5 @@
 <<<<<<< Updated upstream
-﻿"""Naviko GUI Plugin System
+"""Naviko GUI Plugin System
 拡張可能なプラグイン式GUIアーキテクチャ
 """
 =======

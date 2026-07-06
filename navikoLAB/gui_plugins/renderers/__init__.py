@@ -1,5 +1,5 @@
 <<<<<<< Updated upstream
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Naviko GUI Plugin System - Character Renderers Package
 
