@@ -36,8 +36,13 @@ class DefaultSpriteRenderer(CharacterRenderer):
     }
     """
     
-    def __init__(self):
-        """コンストラクタ"""
+    def __init__(self, config: Dict[str, Any]):
+        """
+        コンストラクタ
+        
+        Args:
+            config (Dict[str, Any]): プラグイン設定
+        """
         self.config: Dict[str, Any] = {}
         self.current_emotion: str = "idle"
         self.raw_frames: Dict[str, List[Image.Image]] = {}
@@ -48,6 +53,9 @@ class DefaultSpriteRenderer(CharacterRenderer):
         self.spritesheet: Optional[Image.Image] = None
         self.canvas_image_id: Optional[int] = None
         self.current_frame_index: int = 0
+        
+        # 設定を適用
+        self.initialize(config)
     
     def initialize(self, config: Dict[str, Any]) -> None:
         """
