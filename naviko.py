@@ -59,12 +59,11 @@ from navikoLAB.core.mission_bridge import MissionBridge
 from navikoLAB.capabilities.capability_gui_bridge import CapabilityGUIBridge
 from navikoLAB.naviko_self_growth_bridge import NavikoSelfGrowthBridge
 
-<<<<<<< Updated upstream
 # === 自己改善モジュール ===
 from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
 from navikoLAB.process_recorder import ProcessRecorder
-=======
+
 # === GUI Plugin System import ===
 try:
     from navikoLAB.gui_plugins.config_manager import ConfigManager
@@ -88,7 +87,6 @@ except ImportError as e:
     PHASE3_AVAILABLE = False
     SystemHealthMonitor = None
     NavikoSystemController = None
->>>>>>> Stashed changes
 
 ROOT = Path(__file__).resolve().parent
 SELF_FILE = ROOT / "naviko.py"
@@ -8646,55 +8644,6 @@ except Exception:
 
 root.geometry(f"{BASE_WIDTH}x{BASE_HEIGHT}+500+300")
 
-<<<<<<< Updated upstream
-
-# === スプライトシート読み込み ===
-if character_hub_enabled and character_loader:
-    # Character Hub経由で読み込み
-    try:
-        sprite_info = character_loader.get_spritesheet_info()
-        spritesheet_path = sprite_info['path']
-        sheet = Image.open(spritesheet_path).convert("RGBA")
-        print(f"✅ Character Hub: Loaded spritesheet from {spritesheet_path}")
-    except Exception as e:
-        print(f"❌ Character Hub spritesheet load failed: {e}")
-        print("Falling back to legacy spritesheet")
-        sheet = Image.open(SPRITESHEET).convert("RGBA")
-else:
-    # 既存の読み込み処理
-    sheet = Image.open(SPRITESHEET).convert("RGBA")
-
-for name, (row, total) in states_config.items():
-    raw_frames[name] = []
-    y_pos = row * BASE_HEIGHT
-
-    for col in range(total):
-        x_pos = col * BASE_WIDTH
-        cropped = sheet.crop((x_pos, y_pos, x_pos + BASE_WIDTH, y_pos + BASE_HEIGHT))
-        raw_frames[name].append(cropped)
-
-
-def resize_pet_images(scale_val):
-    global tk_frames
-
-    tk_frames = {}
-    w_size = int(BASE_WIDTH * scale_val)
-    h_size = int(BASE_HEIGHT * scale_val)
-
-    root.geometry(f"{w_size}x{h_size}")
-
-    for name, img_list in raw_frames.items():
-        tk_frames[name] = []
-        for img in img_list:
-            resized = img.resize((w_size, h_size), Image.Resampling.NEAREST)
-            tk_frames[name].append(ImageTk.PhotoImage(resized))
-
-
-resize_pet_images(current_scale)
-
-pet_label = tk.Label(root, bg="#00ff00")
-pet_label.pack(fill=tk.BOTH, expand=True)
-=======
 # キャラクター表示初期化（プラグインシステム使用）
 if PLUGIN_SYSTEM_AVAILABLE and character_renderer is not None:
     # プラグインを使用してキャラクター表示初期化
@@ -8734,7 +8683,6 @@ else:
     pet_label = tk.Label(root, bg="#00ff00")
     pet_label.pack(fill=tk.BOTH, expand=True)
     print("✅ キャラクター表示: 既存コード使用（フォールバック）")
->>>>>>> Stashed changes
 
 
 def start_drag(event):
@@ -9799,20 +9747,38 @@ def open_custom_chat_window():
     top_menu = tk.Frame(c_win, bg="#1e1e24")
     top_menu.pack(fill=tk.X, padx=10, pady=5)
 
-    c_area = scrolledtext.ScrolledText(
-        c_win,
-        wrap=tk.WORD,
-        bg="#141418",
-        fg="#ffffff",
-        font=("MS Gothic", 10),
-        bd=0
-    )
-    c_area.pack(
-        padx=10,
-        pady=5,
-        fill=tk.BOTH,
-        expand=True
-    )
+    # ===== チャット表示エリア作成 =====
+    if PLUGIN_SYSTEM_AVAILABLE and chat_display is not None:
+        # プラグインを使用してチャット表示作成
+        chat_config = {
+            "bg_color": "#141418",
+            "fg_color": "#ffffff",
+            "font": ("MS Gothic", 10)
+        }
+        chat_display.initialize(c_win, chat_config)
+        c_area = chat_display.get_widget()
+        c_area.pack(
+            padx=10,
+            pady=5,
+            fill=tk.BOTH,
+            expand=True
+        )
+    else:
+        # 既存コード（フォールバック）
+        c_area = scrolledtext.ScrolledText(
+            c_win,
+            wrap=tk.WORD,
+            bg="#141418",
+            fg="#ffffff",
+            font=("MS Gothic", 10),
+            bd=0
+        )
+        c_area.pack(
+            padx=10,
+            pady=5,
+            fill=tk.BOTH,
+            expand=True
+        )
 
     append_chat_bubble(
         c_area,
