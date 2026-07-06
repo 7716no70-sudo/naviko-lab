@@ -14,9 +14,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-import sys
-sys.path.append(str(Path(__file__).parent.parent))
-from base import CharacterRenderer
+from ..base import CharacterRenderer
 
 
 class DefaultSpriteRenderer(CharacterRenderer):
