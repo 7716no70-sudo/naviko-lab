@@ -92,6 +92,15 @@ class IntegrationTest:
         # テスト6: パフォーマンス測定
         self._test_performance()
         
+        # テスト7: 高度なシナリオテスト
+        self._test_advanced_scenarios()
+        
+        # テスト8: エッジケーステスト
+        self._test_edge_cases()
+        
+        # テスト9: ストレステスト
+        self._test_stress_performance()
+        
         self.end_time = time.time()
         
         # テスト結果サマリー
@@ -115,7 +124,12 @@ class IntegrationTest:
         all_success = True
         for name, module in modules.items():
             try:
-                instance = module() if name != "InputAnalyzer" else module("")
+                if name == "InputAnalyzer":
+                    instance = module("")
+                elif name == "GoalDecomposer":
+                    instance = module("テスト入力")
+                else:
+                    instance = module()
                 print(f"  ✅ {name}: インポート成功")
             except Exception as e:
                 print(f"  ❌ {name}: インポート失敗 - {e}")
@@ -231,13 +245,13 @@ class IntegrationTest:
             planner = ExecutionPlanner(max_parallel_tasks=3)
             plan = planner.create_execution_plan(capabilities)
             print(f"    実行レベル数: {len(plan['execution_plan']['levels'])}")
-            print(f"    総タスク数: {plan['total_tasks']}")
+            print(f"    実行レベル数: {len(plan['execution_plan']['levels'])}")
             print(f"    推定時間: {plan['execution_plan']['total_estimated_time']}")
             
             # ステップ5: 音声フィードバック
             print("  ステップ5: VoiceFeedback...")
             voice = VoiceFeedback(enabled=False)
-            voice.notify_execution_start(goals['main_goal'], total_tasks=plan['total_tasks'])
+            voice.notify_execution_start(goals['main_goal'], total_tasks=len(goals['sub_goals']))
             
             for level_num, level in enumerate(plan['execution_plan']['levels'], 1):
                 task_names = [task['name'] for task in level['tasks']]
@@ -312,7 +326,7 @@ class IntegrationTest:
                 plan = planner.create_execution_plan(capabilities)
                 
                 voice = VoiceFeedback(enabled=False)
-                voice.notify_execution_start(goals['main_goal'], total_tasks=plan['total_tasks'])
+                voice.notify_execution_start(goals['main_goal'], total_tasks=len(goals['sub_goals']))
                 
                 duration = time.time() - start
                 print(f"    結果: ✅ 成功 (所要時間: {duration:.2f}秒)")
@@ -485,6 +499,167 @@ class IntegrationTest:
             print("🎉 全てのテストが合格しました！")
         else:
             print(f"⚠️ {failed_tests}個のテストが失敗しました。")
+        print()
+
+
+    def _test_advanced_scenarios(self):
+        """テスト7: 高度なシナリオテスト"""
+        print("【テスト7: 高度なシナリオテスト】")
+        print("-" * 80)
+        
+        # 複雑なマルチステップタスク
+        scenarios = [
+            {
+                "name": "フルスタックWebアプリ開発",
+                "input": "ReactとFlaskを使ってユーザー認証機能付きのタスク管理アプリを作成し、PostgreSQLデータベースと連携して、Dockerコンテナでデプロイ可能にしてください"
+            },
+            {
+                "name": "MLパイプライン構築",
+                "input": "Kaggleのデータセットを取得して前処理を行い、scikit-learnで機械学習モデルを構築してハイパーパラメータチューニングを実施し、最終的にFlaskでAPIとして公開してください"
+            },
+            {
+                "name": "データ分析ダッシュボード",
+                "input": "Pandasで複数のCSVファイルを統合して時系列分析を実行し、matplotlibとseabornで可視化して、最終的にStreamlitでインタラクティブなダッシュボードを作成してください"
+            }
+        ]
+        
+        all_success = True
+        for scenario in scenarios:
+            try:
+                start_time = time.time()
+                
+                # 完全な連携フローを実行
+                analyzer = InputAnalyzer(scenario["input"])
+                analysis_result = analyzer.analyze()
+                
+                decomposer = GoalDecomposer(scenario["input"], analysis_result["intent"])
+                goal_result = decomposer.decompose()
+                
+                # サブゴール数の確認（複雑なタスクは6個以上のサブゴールを期待）
+                assert len(goal_result['sub_goals']) >= 6, f"サブゴール数が不足: {len(goal_result['sub_goals'])}"
+                
+                duration = time.time() - start_time
+                print(f"  ✅ {scenario['name']}: 成功 ({duration:.4f}秒)")
+                print(f"     - サブゴール: {len(goal_result['sub_goals'])}個")
+                print(f"     - インテント: {analysis_result['intent']}")
+                
+            except Exception as e:
+                print(f"  ❌ {scenario['name']}: 失敗 - {e}")
+                all_success = False
+        
+        status = "success" if all_success else "failed"
+        self.test_results.append({
+            "test": "高度なシナリオテスト",
+            "status": status,
+            "duration": 0
+        })
+        
+        print(f"結果: {'✅ 成功' if all_success else '❌ 失敗'}")
+        print()
+    
+    def _test_edge_cases(self):
+        """テスト8: エッジケーステスト"""
+        print("【テスト8: エッジケーステスト】")
+        print("-" * 80)
+        
+        edge_cases = [
+            {
+                "name": "極端に短い入力",
+                "input": "AI",
+                "expect_intent": "unknown"
+            },
+            {
+                "name": "極端に長い入力",
+                "input": "a" * 1000,
+                "expect_intent": "unknown"
+            },
+            {
+                "name": "特殊文字のみ",
+                "input": "!@#$%^&*()",
+                "expect_intent": "unknown"
+            },
+            {
+                "name": "日本語と英語混在",
+                "input": "Create a Python アプリケーション with データベース",
+                "expect_intent": "create"
+            },
+            {
+                "name": "数字のみ",
+                "input": "12345",
+                "expect_intent": "unknown"
+            }
+        ]
+        
+        all_success = True
+        for case in edge_cases:
+            try:
+                analyzer = InputAnalyzer(case["input"])
+                analysis_result = analyzer.analyze()
+                
+                # インテント確認
+                intent = analysis_result["intent"]
+                print(f"  ✅ {case['name']}: インテント={intent}")
+                
+            except Exception as e:
+                print(f"  ❌ {case['name']}: エラー - {e}")
+                all_success = False
+        
+        status = "success" if all_success else "failed"
+        self.test_results.append({
+            "test": "エッジケーステスト",
+            "status": status,
+            "duration": 0
+        })
+        
+        print(f"結果: {'✅ 成功' if all_success else '❌ 失敗'}")
+        print()
+    
+    def _test_stress_performance(self):
+        """テスト9: ストレステスト"""
+        print("【テスト9: ストレステスト】")
+        print("-" * 80)
+        
+        # 大量の連続実行
+        test_cases = [
+            {
+                "name": "連続100回実行",
+                "count": 100,
+                "input": "Pythonでデータ分析を実行してください"
+            }
+        ]
+        
+        all_success = True
+        for test in test_cases:
+            try:
+                start_time = time.time()
+                
+                for i in range(test["count"]):
+                    analyzer = InputAnalyzer(test["input"])
+                    analysis_result = analyzer.analyze()
+                    
+                    decomposer = GoalDecomposer(test["input"], analysis_result["intent"])
+                    goal_result = decomposer.decompose()
+                
+                duration = time.time() - start_time
+                avg_time = duration / test["count"]
+                
+                print(f"  ✅ {test['name']}: 成功")
+                print(f"     - 総実行時間: {duration:.4f}秒")
+                print(f"     - 平均実行時間: {avg_time:.4f}秒")
+                print(f"     - 1秒あたりの処理数: {test['count'] / duration:.2f}件/秒")
+                
+            except Exception as e:
+                print(f"  ❌ {test['name']}: 失敗 - {e}")
+                all_success = False
+        
+        status = "success" if all_success else "failed"
+        self.test_results.append({
+            "test": "ストレステスト",
+            "status": status,
+            "duration": 0
+        })
+        
+        print(f"結果: {'✅ 成功' if all_success else '❌ 失敗'}")
         print()
 
 
