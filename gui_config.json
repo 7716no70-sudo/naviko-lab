@@ -1,0 +1,50 @@
+﻿{
+  "character_renderer": {
+    "type": "DefaultSprite",
+    "config": {
+      "sprite_dir": "character_sprites/",
+      "default_emotion": "neutral",
+      "emotions": [
+        "neutral",
+        "happy",
+        "sad",
+        "angry",
+        "surprised"
+      ],
+      "image_format": "png"
+    }
+  },
+  "chat_display": {
+    "type": "Conversational",
+    "config": {
+      "font_size": 12,
+      "font_family": "Yu Gothic UI",
+      "colors": {
+        "user_bg": "#E3F2FD",
+        "user_fg": "#0D47A1",
+        "ai_bg": "#F3E5F5",
+        "ai_fg": "#4A148C",
+        "border": "#BDBDBD"
+      },
+      "padding": 10,
+      "message_spacing": 5
+    }
+  },
+  "layout": {
+    "window_size": [
+      1200,
+      800
+    ],
+    "character_area_width": 400,
+    "chat_area_width": 800,
+    "min_window_size": [
+      800,
+      600
+    ]
+  },
+  "system": {
+    "auto_save_config": true,
+    "plugin_reload_on_change": false,
+    "debug_mode": false
+  }
+}
