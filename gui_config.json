@@ -2,7 +2,7 @@
   "character_renderer": {
     "type": "DefaultSprite",
     "config": {
-      "sprite_dir": "character_sprites/",
+      "sprite_dir": "./",
       "default_emotion": "neutral",
       "emotions": {
         "idle": [
