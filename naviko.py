@@ -8607,7 +8607,7 @@ chat_display_plugin = None
 if PLUGIN_SYSTEM_AVAILABLE:
     try:
         # ConfigManager初期化
-        config_manager = ConfigManager(str(ROOT / "gui_config.json"))
+        config_manager = ConfigManager(str(ROOT))
         gui_config = config_manager.load_config()
         
         # PluginRegistry初期化
@@ -8621,7 +8621,7 @@ if PLUGIN_SYSTEM_AVAILABLE:
         
         # キャラクターレンダラー初期化
         renderer_config = gui_config["character_renderer"]
-        renderer_class = plugin_registry.get_renderer(renderer_config["type"])
+        renderer_class = plugin_registry.get_character_renderer(renderer_config["type"])
         character_renderer = renderer_class(renderer_config["config"])
         print(f"✅ キャラクターレンダラー初期化: {renderer_config['type']}")
         
