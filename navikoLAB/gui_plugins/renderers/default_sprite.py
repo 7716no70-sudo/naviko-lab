@@ -124,6 +124,10 @@ class DefaultSpriteRenderer(CharacterRenderer):
                 例: {"idle": (0, 4), "waving": (1, 4)}
                     (行番号, フレーム数)
         """
+        # JSONから読み込んだlist形式をtuple形式に変換
+        emotions_config = {k: tuple(v) if isinstance(v, list) else v 
+                          for k, v in emotions_config.items()}
+        
         for emotion, (row, frame_count) in emotions_config.items():
             self.raw_frames[emotion] = []
             y_pos = row * self.base_height

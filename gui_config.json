@@ -4,14 +4,49 @@
     "config": {
       "sprite_dir": "character_sprites/",
       "default_emotion": "neutral",
-      "emotions": [
-        "neutral",
-        "happy",
-        "sad",
-        "angry",
-        "surprised"
-      ],
-      "image_format": "png"
+      "emotions": {
+        "idle": [
+          0,
+          6
+        ],
+        "running-right": [
+          1,
+          8
+        ],
+        "running-left": [
+          2,
+          8
+        ],
+        "waving": [
+          3,
+          4
+        ],
+        "jumping": [
+          4,
+          5
+        ],
+        "failed": [
+          5,
+          8
+        ],
+        "waiting": [
+          6,
+          6
+        ],
+        "running": [
+          7,
+          6
+        ],
+        "review": [
+          8,
+          6
+        ]
+      },
+      "image_format": "png",
+      "sprite_file": "spritesheet.webp",
+      "base_width": 128,
+      "base_height": 128,
+      "scale": 1.0
     }
   },
   "chat_display": {
