@@ -8607,7 +8607,7 @@ chat_display_plugin = None
 if PLUGIN_SYSTEM_AVAILABLE:
     try:
         # ConfigManager初期化
-        config_manager = ConfigManager(str(ROOT / "gui_config.json"))
+        config_manager = ConfigManager(str(ROOT))
         gui_config = config_manager.load_config()
         
         # PluginRegistry初期化
