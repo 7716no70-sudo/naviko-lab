@@ -8640,13 +8640,14 @@ def open_layout_settings_dialog(parent_window):
         pady=5
     ).pack()
 
-def start_voice_recognition(entry_w, area_w):
+def start_voice_recognition(entry_w, area_w, auto_send=True):
     """
     音声認識を開始し、認識したテキストを入力フィールドに挿入
     
     Args:
         entry_w: 入力フィールド（ScrolledTextまたはEntry）
         area_w: チャット表示エリア
+        auto_send: 音声認識後に自動送信するか（デフォルト: True）
     """
     if not SPEECH_RECOGNITION_AVAILABLE:
         append_chat_bubble(
@@ -8671,11 +8672,11 @@ def start_voice_recognition(entry_w, area_w):
             
             # マイクから音声を取得
             with sr.Microphone() as source:
-                # ノイズ調整（1秒間）
-                recognizer.adjust_for_ambient_noise(source, duration=1)
+                # ノイズ調整（0.5秒間 - 開始ラグ削減）
+                recognizer.adjust_for_ambient_noise(source, duration=0.5)
                 
-                # 音声を録音（タイムアウト: 5秒）
-                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+                # 音声を録音（タイムアウト: 5秒、認識時間: 15秒）
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=15)
             
             # Google Web Speech APIで音声認識（日本語）
             text = recognizer.recognize_google(audio, language="ja-JP")
@@ -8695,6 +8696,17 @@ def start_voice_recognition(entry_w, area_w):
                 "navi",
                 f"✅ 音声認識完了： \"{text}\""
             )
+            
+            # 自動送信機能（音声認識完了後、自動的にNavikoに送信）
+            if auto_send:
+                append_chat_bubble(
+                    area_w,
+                    "navi",
+                    "📤 自動送信中..."
+                )
+                # execute_groq_communicationを呼び出し
+                # paste_wはNone（貼り付けエリアは使用しない）
+                execute_groq_communication(entry_w, None, area_w)
             
         except sr.WaitTimeoutError:
             append_chat_bubble(
