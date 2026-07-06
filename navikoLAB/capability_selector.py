@@ -3,30 +3,19 @@
 """
 CapabilitySelector - Naviko能力選択エンジン
 
-TaskAnalyzerが分解したタスクを受け取り、対応する能力（Capability）をマッピングする。
+TaskAnalyzerが分解したタスクを受け取り、対応する能力（Capability）を選択・マッピングする。
+既存モジュール（DeepSearchEngine, AppProjectBuilder等）との統合を管理。
 
 例:
-  入力: {
-      "sub_tasks": [
-          {"type": "information_gathering", "capability": "DeepSearchEngine"},
-          {"type": "code_generation", "capability": "AppProjectBuilder"}
-      ]
-  }
+  入力: TaskAnalyzerの出力（sub_tasksリスト）
   出力: {
-      "selected_capabilities": [
+      "capabilities": [
           {
               "name": "DeepSearchEngine",
-              "module": "deep_search_engine",
-              "class": "DeepSearchEngine",
-              "available": True,
-              "priority": 1
-          },
-          {
-              "name": "AppProjectBuilder",
-              "module": "app_project_builder",
-              "class": "AppProjectBuilder",
-              "available": True,
-              "priority": 2
+              "task": {...},
+              "priority": 1,
+              "estimated_time": "5分",
+              "status": "ready"
           }
       ]
   }
@@ -34,7 +23,7 @@ TaskAnalyzerが分解したタスクを受け取り、対応する能力（Capab
 
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 
@@ -42,373 +31,352 @@ class CapabilitySelector:
     """
     能力選択エンジン
     
-    TaskAnalyzerのタスク分解結果を受け取り、対応する能力を選択・マッピングする。
+    TaskAnalyzerのタスク分解結果を受け取り、
+    対応する能力（Capability）をマッピングする。
     """
     
-    def __init__(self, base_dir: Optional[str] = None):
+    def __init__(self, naviko_lab_path: Optional[str] = None):
         """
         CapabilitySelectorの初期化
         
         Args:
-            base_dir: navikoLABディレクトリの絶対パス（デフォルト: 自動検出）
+            naviko_lab_path: navikoLABディレクトリのパス（オプション）
         """
-        # ベースディレクトリの設定
-        if base_dir is None:
-            # 自動検出: このファイルの場所から推定
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            self.base_dir = current_dir
-        else:
-            self.base_dir = base_dir
+        # navikoLABのパスを設定
+        if naviko_lab_path is None:
+            # デフォルト: 現在のファイルがあるディレクトリ
+            naviko_lab_path = os.path.dirname(os.path.abspath(__file__))
         
-        # 能力の定義
-        self.capabilities = {
-            "DeepSearchEngine": {
+        self.naviko_lab_path = naviko_lab_path
+        
+        # 能力マッピングの定義
+        self.capability_mappings = {
+            "information_gathering": {
                 "module": "deep_search_engine",
                 "class": "DeepSearchEngine",
-                "description": "情報収集・リサーチ能力",
-                "task_types": ["information_gathering"],
-                "priority": 1,
+                "description": "ディープサーチエンジン（情報収集）",
+                "available": True,
                 "dependencies": ["universal_llm_connector"]
             },
-            "AppProjectBuilder": {
+            "code_generation": {
                 "module": "app_project_builder",
                 "class": "AppProjectBuilder",
-                "description": "アプリケーション・コード生成能力",
-                "task_types": ["code_generation"],
-                "priority": 2,
+                "description": "アプリケーションビルダー（コード生成）",
+                "available": True,
                 "dependencies": ["llm_connector"]
             },
-            "ImprovementManager": {
+            "code_improvement": {
                 "module": "improvement_manager",
                 "class": "ImprovementManager",
-                "description": "コード改善・最適化能力",
-                "task_types": ["code_improvement"],
-                "priority": 3,
+                "description": "改善マネージャー（コード改善）",
+                "available": True,
                 "dependencies": ["llm_connector"]
             },
-            "DataProcessor": {
+            "data_processing": {
                 "module": "data_processor",
                 "class": "DataProcessor",
-                "description": "データ処理・分析能力",
-                "task_types": ["data_processing"],
-                "priority": 2,
+                "description": "データプロセッサー（データ処理）",
+                "available": False,  # 未実装
                 "dependencies": []
             },
-            "DocumentGenerator": {
+            "document_generation": {
                 "module": "document_generator",
                 "class": "DocumentGenerator",
-                "description": "ドキュメント・資料生成能力",
-                "task_types": ["document_generation"],
-                "priority": 3,
+                "description": "ドキュメント生成（資料作成）",
+                "available": False,  # 未実装
                 "dependencies": []
             },
-            "ConversationEngine": {
+            "conversation": {
                 "module": "conversation_engine",
                 "class": "ConversationEngine",
-                "description": "会話・質問応答能力",
-                "task_types": ["conversation"],
-                "priority": 1,
-                "dependencies": []
+                "description": "会話エンジン（質問応答）",
+                "available": True,
+                "dependencies": ["llm_connector"]
             }
         }
-        
-        # 利用可能性キャッシュ
-        self._availability_cache = {}
     
     def select_capabilities(self, task_analysis_result: Dict) -> Dict:
         """
-        タスク分析結果から必要な能力を選択
+        TaskAnalyzerの出力から能力を選択
         
         Args:
-            task_analysis_result: TaskAnalyzerの分析結果
-                {
-                    "main_goal": str,
-                    "sub_tasks": [
-                        {
-                            "type": str,
-                            "priority": int,
-                            "description": str,
-                            "capability": str,
-                            "estimated_minutes": int
-                        }
-                    ],
-                    "estimated_time": str,
-                    "complexity": str
-                }
+            task_analysis_result: TaskAnalyzerのanalyze()メソッドの出力
+            {
+                "main_goal": str,
+                "sub_tasks": List[Dict],
+                "estimated_time": str,
+                "complexity": str,
+                "requires_confirmation": bool,
+                "analyzed_at": str
+            }
         
         Returns:
-            選択された能力のリスト:
+            選択結果の辞書:
             {
-                "selected_capabilities": [
-                    {
-                        "name": str,
-                        "module": str,
-                        "class": str,
-                        "description": str,
-                        "available": bool,
-                        "priority": int,
-                        "task": Dict  # 対応するタスク情報
-                    }
-                ],
-                "unavailable_capabilities": [...],
-                "missing_dependencies": [...]
+                "main_goal": str,
+                "capabilities": List[Dict],  # 選択された能力のリスト
+                "total_estimated_time": str,
+                "execution_order": List[int],  # 実行順序（priorityのリスト）
+                "warnings": List[str],  # 警告メッセージ（利用不可な能力等）
+                "selected_at": str
             }
         """
         if not task_analysis_result or "sub_tasks" not in task_analysis_result:
             return self._empty_result()
         
+        main_goal = task_analysis_result.get("main_goal", "不明")
         sub_tasks = task_analysis_result.get("sub_tasks", [])
-        selected = []
-        unavailable = []
-        missing_deps = set()
+        
+        # 各タスクに対応する能力を選択
+        capabilities = []
+        warnings = []
+        total_minutes = 0
         
         for task in sub_tasks:
-            capability_name = task.get("capability")
-            
-            if not capability_name or capability_name not in self.capabilities:
-                # 未知の能力
-                unavailable.append({
-                    "name": capability_name,
-                    "reason": "Unknown capability",
-                    "task": task
-                })
+            task_type = task.get("type")
+            if task_type not in self.capability_mappings:
+                warnings.append(f"タスクタイプ '{task_type}' に対応する能力が見つかりません")
                 continue
             
-            capability_config = self.capabilities[capability_name]
+            mapping = self.capability_mappings[task_type]
             
-            # 利用可能性をチェック
-            is_available, reason = self.check_capability_availability(capability_name)
+            # 能力が利用可能かチェック
+            if not mapping["available"]:
+                warnings.append(
+                    f"{mapping['description']} は現在利用できません（未実装）"
+                )
+                continue
             
-            capability_info = {
-                "name": capability_name,
-                "module": capability_config["module"],
-                "class": capability_config["class"],
-                "description": capability_config["description"],
-                "available": is_available,
-                "priority": task.get("priority", capability_config["priority"]),
-                "task": task
+            # 依存関係チェック
+            missing_deps = self._check_dependencies(mapping["dependencies"])
+            if missing_deps:
+                warnings.append(
+                    f"{mapping['description']} の依存関係が不足: {', '.join(missing_deps)}"
+                )
+                continue
+            
+            # 能力を追加
+            capability = {
+                "name": mapping["class"],
+                "module": mapping["module"],
+                "description": mapping["description"],
+                "task": task,
+                "priority": task.get("priority", 999),
+                "estimated_minutes": task.get("estimated_minutes", 0),
+                "status": "ready",
+                "dependencies": mapping["dependencies"]
             }
-            
-            if is_available:
-                selected.append(capability_info)
-            else:
-                capability_info["reason"] = reason
-                unavailable.append(capability_info)
-                
-                # 依存関係の問題を記録
-                if "Missing dependency" in reason:
-                    for dep in capability_config.get("dependencies", []):
-                        missing_deps.add(dep)
+            capabilities.append(capability)
+            total_minutes += task.get("estimated_minutes", 0)
+        
+        # 実行順序を生成（priorityでソート）
+        execution_order = [cap["priority"] for cap in sorted(capabilities, key=lambda x: x["priority"])]
+        
+        # 総推定時間を計算
+        total_estimated_time = self._format_time(total_minutes)
         
         return {
-            "selected_capabilities": selected,
-            "unavailable_capabilities": unavailable,
-            "missing_dependencies": list(missing_deps),
-            "selection_time": datetime.now().isoformat()
+            "main_goal": main_goal,
+            "capabilities": capabilities,
+            "total_estimated_time": total_estimated_time,
+            "execution_order": execution_order,
+            "warnings": warnings,
+            "selected_at": datetime.now().isoformat()
         }
-    
-    def check_capability_availability(self, capability_name: str) -> tuple:
-        """
-        能力の利用可能性をチェック
-        
-        Args:
-            capability_name: 能力名
-        
-        Returns:
-            (is_available: bool, reason: str)
-        """
-        # キャッシュ確認
-        if capability_name in self._availability_cache:
-            return self._availability_cache[capability_name]
-        
-        if capability_name not in self.capabilities:
-            result = (False, f"Unknown capability: {capability_name}")
-            self._availability_cache[capability_name] = result
-            return result
-        
-        capability_config = self.capabilities[capability_name]
-        module_name = capability_config["module"]
-        
-        # モジュールファイルの存在確認
-        module_path = os.path.join(self.base_dir, f"{module_name}.py")
-        
-        if not os.path.exists(module_path):
-            result = (False, f"Module file not found: {module_path}")
-            self._availability_cache[capability_name] = result
-            return result
-        
-        # 依存関係のチェック
-        dependencies = capability_config.get("dependencies", [])
-        for dep in dependencies:
-            dep_path = os.path.join(self.base_dir, f"{dep}.py")
-            if not os.path.exists(dep_path):
-                result = (False, f"Missing dependency: {dep}")
-                self._availability_cache[capability_name] = result
-                return result
-        
-        # インポート可能性のチェック（簡易版）
-        try:
-            # sys.pathにbase_dirを追加（一時的）
-            if self.base_dir not in sys.path:
-                sys.path.insert(0, self.base_dir)
-            
-            # モジュールインポート試行
-            __import__(module_name)
-            
-            result = (True, "Available")
-            self._availability_cache[capability_name] = result
-            return result
-        
-        except Exception as e:
-            result = (False, f"Import error: {str(e)}")
-            self._availability_cache[capability_name] = result
-            return result
-    
-    def get_capability_priority(self, capability_name: str) -> int:
-        """
-        能力の優先度を取得
-        
-        Args:
-            capability_name: 能力名
-        
-        Returns:
-            優先度（数値が小さいほど高優先度）
-        """
-        if capability_name in self.capabilities:
-            return self.capabilities[capability_name]["priority"]
-        return 999  # 未知の能力は最低優先度
-    
-    def get_capability_info(self, capability_name: str) -> Optional[Dict]:
-        """
-        能力の詳細情報を取得
-        
-        Args:
-            capability_name: 能力名
-        
-        Returns:
-            能力情報の辞書、または存在しない場合はNone
-        """
-        if capability_name in self.capabilities:
-            return self.capabilities[capability_name].copy()
-        return None
-    
-    def list_all_capabilities(self) -> List[Dict]:
-        """
-        全ての利用可能な能力をリスト
-        
-        Returns:
-            能力情報のリスト
-        """
-        all_capabilities = []
-        
-        for name, config in self.capabilities.items():
-            is_available, reason = self.check_capability_availability(name)
-            
-            capability_info = {
-                "name": name,
-                "module": config["module"],
-                "class": config["class"],
-                "description": config["description"],
-                "task_types": config["task_types"],
-                "priority": config["priority"],
-                "dependencies": config["dependencies"],
-                "available": is_available,
-                "reason": reason if not is_available else "Available"
-            }
-            
-            all_capabilities.append(capability_info)
-        
-        # 優先度順にソート
-        all_capabilities.sort(key=lambda x: x["priority"])
-        
-        return all_capabilities
     
     def _empty_result(self) -> Dict:
         """空の結果"""
         return {
-            "selected_capabilities": [],
-            "unavailable_capabilities": [],
-            "missing_dependencies": [],
-            "selection_time": datetime.now().isoformat()
+            "main_goal": "不明",
+            "capabilities": [],
+            "total_estimated_time": "0分",
+            "execution_order": [],
+            "warnings": ["タスク分析結果が不正です"],
+            "selected_at": datetime.now().isoformat()
         }
     
-    def clear_cache(self):
-        """利用可能性キャッシュをクリア"""
-        self._availability_cache.clear()
+    def _check_dependencies(self, dependencies: List[str]) -> List[str]:
+        """
+        依存関係をチェック
+        
+        Args:
+            dependencies: 依存モジュール名のリスト
+        
+        Returns:
+            不足している依存関係のリスト（空なら全て満たされている）
+        """
+        missing = []
+        for dep in dependencies:
+            dep_path = os.path.join(self.naviko_lab_path, f"{dep}.py")
+            if not os.path.exists(dep_path):
+                missing.append(dep)
+        return missing
+    
+    def _format_time(self, total_minutes: int) -> str:
+        """
+        推定時間をフォーマット
+        
+        Args:
+            total_minutes: 総分数
+        
+        Returns:
+            フォーマット済みの時間文字列
+        """
+        if total_minutes < 60:
+            return f"{total_minutes}分"
+        else:
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            if minutes == 0:
+                return f"{hours}時間"
+            else:
+                return f"{hours}時間{minutes}分"
+    
+    def get_capability_info(self, capability_name: str) -> Optional[Dict]:
+        """
+        指定された能力の情報を取得
+        
+        Args:
+            capability_name: 能力のクラス名
+        
+        Returns:
+            能力情報の辞書（見つからない場合はNone）
+        """
+        for task_type, mapping in self.capability_mappings.items():
+            if mapping["class"] == capability_name:
+                return {
+                    "task_type": task_type,
+                    "module": mapping["module"],
+                    "class": mapping["class"],
+                    "description": mapping["description"],
+                    "available": mapping["available"],
+                    "dependencies": mapping["dependencies"]
+                }
+        return None
+    
+    def list_available_capabilities(self) -> List[Dict]:
+        """
+        利用可能な能力の一覧を取得
+        
+        Returns:
+            利用可能な能力のリスト
+        """
+        available = []
+        for task_type, mapping in self.capability_mappings.items():
+            if mapping["available"]:
+                missing_deps = self._check_dependencies(mapping["dependencies"])
+                available.append({
+                    "task_type": task_type,
+                    "class": mapping["class"],
+                    "description": mapping["description"],
+                    "dependencies": mapping["dependencies"],
+                    "dependencies_met": len(missing_deps) == 0,
+                    "missing_dependencies": missing_deps
+                })
+        return available
+    
+    def validate_execution_plan(self, capabilities: List[Dict]) -> Dict:
+        """
+        実行計画を検証
+        
+        Args:
+            capabilities: 選択された能力のリスト
+        
+        Returns:
+            検証結果:
+            {
+                "valid": bool,
+                "errors": List[str],
+                "warnings": List[str]
+            }
+        """
+        errors = []
+        warnings = []
+        
+        # 1. 能力が空でないかチェック
+        if not capabilities:
+            errors.append("実行する能力が選択されていません")
+        
+        # 2. 各能力の依存関係チェック
+        for cap in capabilities:
+            missing_deps = self._check_dependencies(cap.get("dependencies", []))
+            if missing_deps:
+                errors.append(
+                    f"{cap['name']} の依存関係が不足: {', '.join(missing_deps)}"
+                )
+        
+        # 3. 優先度の重複チェック
+        priorities = [cap.get("priority") for cap in capabilities]
+        if len(priorities) != len(set(priorities)):
+            warnings.append("優先度に重複があります")
+        
+        # 4. ステータスチェック
+        for cap in capabilities:
+            if cap.get("status") != "ready":
+                warnings.append(
+                    f"{cap['name']} のステータスが 'ready' ではありません: {cap.get('status')}"
+                )
+        
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings
+        }
 
 
 # テスト用のmain関数
 if __name__ == "__main__":
+    # TaskAnalyzerをインポート
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from task_analyzer import TaskAnalyzer
+    
+    # テストケース
+    analyzer = TaskAnalyzer()
     selector = CapabilitySelector()
+    
+    test_cases = [
+        "プレゼン資料作成して",
+        "アプリ作成して",
+        "データ分析して"
+    ]
     
     print("=== CapabilitySelector テスト ===\n")
     
-    # テストケース1: プレゼン資料作成
-    print("【テスト 1: プレゼン資料作成】")
-    task_result_1 = {
-        "main_goal": "プレゼン資料作成",
-        "sub_tasks": [
-            {
-                "type": "information_gathering",
-                "priority": 1,
-                "description": "情報収集",
-                "capability": "DeepSearchEngine",
-                "estimated_minutes": 5
-            },
-            {
-                "type": "document_generation",
-                "priority": 2,
-                "description": "ドキュメント生成",
-                "capability": "DocumentGenerator",
-                "estimated_minutes": 15
-            }
-        ],
-        "estimated_time": "20分",
-        "complexity": "medium"
-    }
+    for i, test in enumerate(test_cases, 1):
+        print(f"【テスト {i}/3】")
+        print(f"入力: {test}")
+        
+        # タスク分析
+        task_result = analyzer.analyze(test)
+        print(f"  タスク分析:")
+        print(f"    メインゴール: {task_result['main_goal']}")
+        print(f"    サブタスク数: {len(task_result['sub_tasks'])}")
+        
+        # 能力選択
+        capability_result = selector.select_capabilities(task_result)
+        print(f"  能力選択:")
+        print(f"    選択された能力数: {len(capability_result['capabilities'])}")
+        print(f"    総推定時間: {capability_result['total_estimated_time']}")
+        print(f"    実行順序: {capability_result['execution_order']}")
+        
+        if capability_result['warnings']:
+            print(f"    警告:")
+            for warning in capability_result['warnings']:
+                print(f"      ⚠️ {warning}")
+        
+        print(f"  選択された能力:")
+        for cap in capability_result['capabilities']:
+            print(f"    {cap['priority']}. {cap['description']} ({cap['name']})")
+        
+        print()
     
-    result_1 = selector.select_capabilities(task_result_1)
-    print(f"選択された能力: {len(result_1['selected_capabilities'])}個")
-    for cap in result_1["selected_capabilities"]:
-        print(f"  - {cap['name']}: {cap['description']} (優先度: {cap['priority']})")
+    # 利用可能な能力の一覧
+    print("\n=== 利用可能な能力一覧 ===")
+    available = selector.list_available_capabilities()
+    for cap in available:
+        deps_status = "✅" if cap["dependencies_met"] else "❌"
+        print(f"{deps_status} {cap['description']} ({cap['class']})")
+        if not cap["dependencies_met"]:
+            print(f"   不足依存: {', '.join(cap['missing_dependencies'])}")
     
-    if result_1["unavailable_capabilities"]:
-        print(f"利用不可能な能力: {len(result_1['unavailable_capabilities'])}個")
-        for cap in result_1["unavailable_capabilities"]:
-            print(f"  - {cap['name']}: {cap.get('reason', 'Unknown')}")
-    
-    print()
-    
-    # テストケース2: アプリ作成
-    print("【テスト 2: アプリ作成】")
-    task_result_2 = {
-        "main_goal": "アプリ作成",
-        "sub_tasks": [
-            {
-                "type": "code_generation",
-                "priority": 1,
-                "description": "コード生成",
-                "capability": "AppProjectBuilder",
-                "estimated_minutes": 15
-            }
-        ],
-        "estimated_time": "15分",
-        "complexity": "medium"
-    }
-    
-    result_2 = selector.select_capabilities(task_result_2)
-    print(f"選択された能力: {len(result_2['selected_capabilities'])}個")
-    for cap in result_2["selected_capabilities"]:
-        print(f"  - {cap['name']}: {cap['description']} (利用可能: {cap['available']})")
-    
-    print()
-    
-    # 全能力リスト
-    print("【全能力リスト】")
-    all_caps = selector.list_all_capabilities()
-    print(f"総能力数: {len(all_caps)}個")
-    for cap in all_caps:
-        status = "✅" if cap["available"] else "❌"
-        print(f"  {status} {cap['name']}: {cap['description']}")
-    
-    print("\n✅ 全テスト完了")
+    print("\n✅ 全テストケース実行完了")
