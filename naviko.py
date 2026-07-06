@@ -8973,22 +8973,31 @@ def change_scale_menu(size_factor):
 
 
 def append_chat_bubble(area_widget, sender, message_text):
-    area_widget.configure(state="normal")
-
-    if sender == "user":
-        area_widget.insert(tk.END, "\n" + " " * 30 + "【ナオさん】\n", "user_title")
-        area_widget.insert(tk.END, message_text + "\n", "user_text")
+    if PLUGIN_SYSTEM_AVAILABLE and chat_display is not None:
+        # プラグインを使用してチャット表示
+        if sender == "user":
+            chat_display.display_user_message(message_text)
+        else:
+            # sender == "navi" またはその他
+            chat_display.display_ai_message(message_text, emotion="neutral")
     else:
-        area_widget.insert(tk.END, "\n【ナビ子】\n", "navi_title")
-        area_widget.insert(tk.END, f"{message_text}\n", "navi_text")
+        # 既存コード（フォールバック）
+        area_widget.configure(state="normal")
 
-    area_widget.tag_config("user_title", foreground="#6366f1", justify="right")
-    area_widget.tag_config("user_text", foreground="#e0e7ff", justify="right")
-    area_widget.tag_config("navi_title", foreground="#a8a8a8")
-    area_widget.tag_config("navi_text", foreground="#ffffff")
+        if sender == "user":
+            area_widget.insert(tk.END, "\n" + " " * 30 + "【ナオさん】\n", "user_title")
+            area_widget.insert(tk.END, message_text + "\n", "user_text")
+        else:
+            area_widget.insert(tk.END, "\n【ナビ子】\n", "navi_title")
+            area_widget.insert(tk.END, f"{message_text}\n", "navi_text")
 
-    area_widget.see(tk.END)
-    area_widget.configure(state="disabled")
+        area_widget.tag_config("user_title", foreground="#6366f1", justify="right")
+        area_widget.tag_config("user_text", foreground="#e0e7ff", justify="right")
+        area_widget.tag_config("navi_title", foreground="#a8a8a8")
+        area_widget.tag_config("navi_text", foreground="#ffffff")
+
+        area_widget.see(tk.END)
+        area_widget.configure(state="disabled")
     
 
     
