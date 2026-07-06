@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-"""Naviko GUI Plugin System
-拡張可能なプラグイン式GUIアーキテクチャ
-"""
-=======
 # -*- coding: utf-8 -*-
 """
 Naviko GUI Plugin System
@@ -44,4 +39,3 @@ def initialize_plugin_system() -> None:
         initialize_plugin_system()  # デフォルトプラグイン登録
     """
     register_default_plugins()
->>>>>>> Stashed changes
