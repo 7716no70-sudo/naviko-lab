@@ -8607,14 +8607,14 @@ chat_display_plugin = None
 if PLUGIN_SYSTEM_AVAILABLE:
     try:
         # ConfigManager初期化
-        config_manager = ConfigManager(str(ROOT))
+        config_manager = ConfigManager(str(ROOT / "gui_config.json"))
         gui_config = config_manager.load_config()
         
         # PluginRegistry初期化
         plugin_registry = PluginRegistry()
         
         # プラグイン登録
-        plugin_registry.register_renderer("DefaultSprite", DefaultSpriteRenderer)
+        plugin_registry.register_character_renderer("DefaultSprite", DefaultSpriteRenderer)
         plugin_registry.register_chat_display("Conversational", ConversationalChat)
         
         print("✅ GUIプラグインシステム初期化完了")
@@ -8624,6 +8624,12 @@ if PLUGIN_SYSTEM_AVAILABLE:
         renderer_class = plugin_registry.get_renderer(renderer_config["type"])
         character_renderer = renderer_class(renderer_config["config"])
         print(f"✅ キャラクターレンダラー初期化: {renderer_config['type']}")
+        
+        # チャット表示初期化
+        chat_config_data = gui_config["chat_display"]
+        chat_class = plugin_registry.get_chat_display(chat_config_data["type"])
+        chat_display = chat_class()
+        print(f"✅ チャット表示初期化: {chat_config_data['type']}")
         
     except Exception as e:
         print(f"⚠️ GUIプラグインシステム初期化失敗: {e}")
