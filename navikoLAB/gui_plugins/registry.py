@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
 # -*- coding: utf-8 -*-
-=======
-# -*- coding: utf-8 -*-
->>>>>>> Stashed changes
 """
 Naviko GUI Plugin System - プラグインレジストリ
 
@@ -191,12 +187,6 @@ class PluginRegistry:
         print("⚠️  プラグインレジストリをリセットしました。")
 
 
-<<<<<<< Updated upstream
-# プラグインシステムのバージョン情報
-__version__ = "1.0.0"
-__author__ = "Naviko Development Team"
-__all__ = ["PluginRegistry"]
-=======
 def register_default_plugins() -> None:
     """
     デフォルトプラグインを登録
@@ -231,4 +221,3 @@ def register_default_plugins() -> None:
 __version__ = "1.0.0"
 __author__ = "Naviko Development Team"
 __all__ = ["PluginRegistry", "register_default_plugins"]
->>>>>>> Stashed changes

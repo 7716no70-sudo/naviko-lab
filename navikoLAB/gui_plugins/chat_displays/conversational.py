@@ -138,25 +138,14 @@ class ConversationalChat(ChatDisplay):
         # ユーザー名表示（右寄せ）
         self.widget.insert(
             tk.END,
-<<<<<<< Updated upstream
-            "
-" + " " * 30 + "【ナオさん】
-",
-=======
             "\n" + " " * 30 + "【ナオさん】\n",
->>>>>>> Stashed changes
             "user_title"
         )
         
         # メッセージ表示（右寄せ）
         self.widget.insert(
             tk.END,
-<<<<<<< Updated upstream
-            text + "
-",
-=======
             text + "\n",
->>>>>>> Stashed changes
             "user_text"
         )
         
@@ -181,25 +170,14 @@ class ConversationalChat(ChatDisplay):
         # AI名表示（左寄せ）
         self.widget.insert(
             tk.END,
-<<<<<<< Updated upstream
-            "
-【ナビ子】
-",
-=======
             "\n【ナビ子】\n",
->>>>>>> Stashed changes
             "navi_title"
         )
         
         # メッセージ表示（左寄せ）
         self.widget.insert(
             tk.END,
-<<<<<<< Updated upstream
-            f"{text}
-",
-=======
             f"{text}\n",
->>>>>>> Stashed changes
             "navi_text"
         )
         
