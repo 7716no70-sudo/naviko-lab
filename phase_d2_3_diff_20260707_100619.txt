@@ -1,0 +1,15 @@
+# Phase D-2-3 差分内容（行番号: 約9422行目）
+
+# ×ボタンをクリック時、ウィンドウを非表示（バックグラウンド待機）
+def hide_chat_window():
+    c_win.withdraw()
+    print("✅ チャットウィンドウを非表示にしました（バックグラウンド待機中）")
+
+tk.Button(
+    t_bar,
+    text="×",
+    command=hide_chat_window,  # 変更点: destroy → hide_chat_window
+    bg="#aa3333",
+    fg="#ffffff",
+    font=("MS Gothic", 8),
+)

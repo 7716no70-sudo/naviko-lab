@@ -68,16 +68,6 @@ from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
 from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.process_recorder import ProcessRecorder
 
-# === Vosk音声認識インポート ===
-try:
-    import vosk
-    import pyaudio
-    VOSK_AVAILABLE = True
-except ImportError:
-    VOSK_AVAILABLE = False
-    print("⚠️ Vosk音声認識が利用できません（vosk/pyaudioが未インストール）")
-# === Vosk音声認識インポート end ===
-
 # Phase 3モジュールインポート
 try:
     from navikoLAB.system_health_monitor import SystemHealthMonitor
@@ -88,198 +78,6 @@ except ImportError as e:
     PHASE3_AVAILABLE = False
     SystemHealthMonitor = None
     NavikoSystemController = None
-
-# ============================================================
-# VoiceWakeWordDetector - Vosk完全オフライン音声起動システム
-# ============================================================
-
-class VoiceWakeWordDetector:
-    """
-    完全オフライン音声起動システム
-    
-    Features:
-    - ネットワーク不要（Voskローカルモデル使用）
-    - バックグラウンド音声認識
-    - カスタマイズ可能なウェイクワード
-    - 軽量・高速（小型モデル: CPU 5-10%）
-    
-    Usage:
-        detector = VoiceWakeWordDetector(model_path)
-        detector.start_listening(callback_function)
-        # ... 音声起動待機 ...
-        detector.stop_listening()
-    """
-    
-    def __init__(self, model_path, wake_words=None):
-        """
-        初期化
-        
-        Args:
-            model_path (str): Voskモデルのパス
-                例: "vosk_models/vosk-model-small-ja-0.22"
-            wake_words (list, optional): 起動キーワードのリスト
-                デフォルト: ["ナビ子", "なびこ", "ナビコ"]
-        """
-        # Voskモデルの読み込み
-        try:
-            print(f"🔄 Voskモデルを読み込み中: {model_path}")
-            self.model = vosk.Model(model_path)
-            print(f"✅ Voskモデル読み込み完了")
-        except Exception as e:
-            raise RuntimeError(f"Voskモデルの読み込みに失敗: {e}")
-        
-        # ウェイクワード設定
-        if wake_words is None:
-            wake_words = ["ナビ子", "なびこ", "ナビコ"]
-        self.wake_words = [w.lower() for w in wake_words]
-        print(f"🎤 ウェイクワード設定: {self.wake_words}")
-        
-        # 内部状態
-        self.is_listening = False
-        self.callback = None
-        self.recognition_thread = None
-        
-    def start_listening(self, callback):
-        """
-        バックグラウンド音声認識開始
-        
-        Args:
-            callback (function): ウェイクワード検出時に呼ばれる関数
-                シグネチャ: callback(detected_text: str)
-        """
-        if self.is_listening:
-            print("⚠️ 既に音声認識中です")
-            return
-        
-        self.callback = callback
-        self.is_listening = True
-        
-        # 音声認識スレッド開始
-        self.recognition_thread = threading.Thread(
-            target=self._recognition_loop,
-            daemon=True
-        )
-        self.recognition_thread.start()
-        print("✅ バックグラウンド音声認識開始")
-        
-    def stop_listening(self):
-        """音声認識停止"""
-        if not self.is_listening:
-            print("⚠️ 音声認識は既に停止しています")
-            return
-        
-        self.is_listening = False
-        if self.recognition_thread:
-            self.recognition_thread.join(timeout=2.0)
-        print("🔇 バックグラウンド音声認識停止")
-        
-    def _recognition_loop(self):
-        """
-        音声認識ループ（バックグラウンドスレッド）
-        
-        このメソッドは別スレッドで実行され、マイク入力を常時監視します。
-        """
-        # PyAudio初期化
-        p = pyaudio.PyAudio()
-        
-        try:
-            # マイクストリーム開始
-            stream = p.open(
-                format=pyaudio.paInt16,
-                channels=1,
-                rate=16000,
-                input=True,
-                frames_per_buffer=8192
-            )
-            stream.start_stream()
-            
-            # Vosk認識器初期化
-            rec = vosk.KaldiRecognizer(self.model, 16000)
-            rec.SetWords(True)  # 単語単位で認識
-            
-            print("🎤 音声起動待機中...（'hey、ナビ子'と呼んでください）")
-            
-            # メインループ
-            while self.is_listening:
-                try:
-                    # 音声データ取得
-                    data = stream.read(4096, exception_on_overflow=False)
-                    
-                    # 音声認識
-                    if rec.AcceptWaveform(data):
-                        # 完全な文として認識された場合
-                        result = json.loads(rec.Result())
-                        text = result.get("text", "").lower()
-                        
-                        # ウェイクワード検出
-                        if self._detect_wake_word(text):
-                            print(f"✅ ウェイクワード検出: {text}")
-                            if self.callback:
-                                self.callback(text)
-                    else:
-                        # 部分的な認識結果もチェック
-                        partial = json.loads(rec.PartialResult())
-                        text = partial.get("partial", "").lower()
-                        
-                        # 部分一致でも検出（より敏感に反応）
-                        if self._detect_wake_word(text):
-                            print(f"✅ ウェイクワード検出（部分）: {text}")
-                            if self.callback:
-                                self.callback(text)
-                
-                except Exception as e:
-                    # マイク入力エラーは無視して続行
-                    if self.is_listening:
-                        print(f"⚠️ 音声入力エラー（継続中）: {e}")
-                    time.sleep(0.1)
-            
-        except Exception as e:
-            print(f"❌ 音声認識エラー: {e}")
-        
-        finally:
-            # クリーンアップ
-            try:
-                stream.stop_stream()
-                stream.close()
-            except:
-                pass
-            p.terminate()
-            print("🔇 音声認識スレッド終了")
-        
-    def _detect_wake_word(self, text):
-        """
-        ウェイクワード検出
-        
-        Args:
-            text (str): 認識されたテキスト（小文字）
-            
-        Returns:
-            bool: ウェイクワードが含まれているか
-        """
-        # 空文字チェック
-        if not text or len(text.strip()) == 0:
-            return False
-        
-        # 直接マッチ
-        for wake_word in self.wake_words:
-            if wake_word in text:
-                return True
-        
-        # "hey"+"ナビ子"の組み合わせ
-        greeting_words = ["hey", "ねぇ", "ねえ", "ね", "おい"]
-        has_greeting = any(g in text for g in greeting_words)
-        has_wake_word = any(w in text for w in self.wake_words)
-        
-        if has_greeting and has_wake_word:
-            return True
-        
-        return False
-
-
-# ============================================================
-# End of VoiceWakeWordDetector
-# ============================================================
-
 
 ROOT = Path(__file__).resolve().parent
 SELF_FILE = ROOT / "naviko.py"
@@ -9544,71 +9342,26 @@ def run_original_lab_autonomous_flow_from_naviko(user_goal):
 # === Original Naviko LAB Bridge caller end ===
 
 def open_custom_chat_window():
-    print("🔍 デバッグ: open_custom_chat_window()開始")
-    
     if pet_vars["chat_win"] and pet_vars["chat_win"].winfo_exists():
-        print("🔍 デバッグ: 既存ウィンドウを破棄")
         pet_vars["chat_win"].destroy()
         pet_vars["chat_win"] = None
-        # returnを削除（新規ウィンドウを作成する）   
-
-    # GUIレイアウト設定を読み込み
-    print("🔍 デバッグ: load_gui_layout_settings()呼び出し")
-    layout = load_gui_layout_settings()
-    print("🔍 デバッグ: load_gui_layout_settings()完了")
-
-    print("🔍 デバッグ: tk.Toplevel(root)呼び出し")
-    try:
-        c_win = tk.Toplevel(root)
-        print(f"🔍 デバッグ: c_win作成完了: {c_win}")
-    except Exception as e:
-        print(f"❌ エラー: tk.Toplevel(root)失敗: {e}")
-        import traceback
-        traceback.print_exc()
-        return  # エラー時はreturn
+        return
     
-    pet_vars["chat_win"] = c_win
-    print("🔍 デバッグ: pet_vars['chat_win']設定完了")
+    # GUIレイアウト設定を読み込み
+    layout = load_gui_layout_settings()
 
-    print("🔍 デバッグ: ウィンドウ属性設定開始")
+    c_win = tk.Toplevel(root)
+    pet_vars["chat_win"] = c_win
+
     c_win.overrideredirect(False)
     c_win.wm_attributes("-topmost", True)
     c_win.configure(bg=layout["bg_color"])
-    print("🔍 デバッグ: ウィンドウ属性設定完了")
 
-
-    # ★ウィンドウ位置・サイズ・状態の診断★
     w_w = int(BASE_WIDTH * current_scale)
-    
-    # Y座標がマイナスにならないように調整
-    y_pos = max(50, root.winfo_y() - 50)  # 最小値を50に設定（画面上端から50px下）
-    x_pos = root.winfo_x() + w_w + 10
-    
-    # X座標が画面外にならないように調整
-    screen_width = root.winfo_screenwidth()
-    if x_pos + layout['window_width'] > screen_width:
-        x_pos = screen_width - layout['window_width'] - 50  # 画面右端から50px左
-    
-    geo_str = f"{layout['window_width']}x{layout['window_height']}+{x_pos}+{y_pos}"
-    print(f"🔍 デバッグ: ウィンドウgeometry計算: {geo_str}")
-    print(f"🔍 デバッグ: root位置: x={root.winfo_x()}, y={root.winfo_y()}")
-    print(f"🔍 デバッグ: 調整後の位置: x={x_pos}, y={y_pos}")
-    print(f"🔍 デバッグ: ウィンドウサイズ: {layout['window_width']}    x{layout['window_height']}")
-
-    
-    c_win.geometry(geo_str)
+    c_win.geometry(
+        f"{layout['window_width']}x{layout['window_height']}+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
+    )
     c_win.resizable(True, True)
-    
-    # ★ウィンドウ状態確認★
-    print(f"🔍 デバッグ: ウィンドウ設定後の位置: x={c_win.winfo_x()}, y={c_win.winfo_y()}")
-    print(f"🔍 デバッグ: ウィンドウ表示状態: {c_win.state()}")
-    print(f"🔍 デバッグ: ウィンドウ最前面: {c_win.attributes('-topmost')}")
-    
-    # ★強制的に前面表示★
-    c_win.lift()
-    c_win.focus_force()
-    c_win.update()
-    print("🔍 デバッグ: ウィンドウ強制前面表示実行")
 
     t_bar = tk.Frame(c_win, bg="#2b2b36", height=25)
     t_bar.pack(fill=tk.X, side=tk.TOP)
@@ -9621,20 +9374,16 @@ def open_custom_chat_window():
         font=("MS Gothic", 9, "bold")
     ).pack(side=tk.LEFT, padx=5)
 
-    # ×ボタンをクリック時、ウィンドウを非表示（バックグラウンド待機）
-    def hide_chat_window():
-        c_win.withdraw()
-        print("✅ チャットウィンドウを非表示にしました（バックグラウンド待機中）")
-    
     tk.Button(
         t_bar,
         text="×",
-        command=hide_chat_window,
-        bg="#2b2b36",
+        command=c_win.destroy,
+        bg="#aa3333",
         fg="#ffffff",
-        font=("MS Gothic", 10, "bold"),
-        bd=0
-    ).pack(side=tk.RIGHT, padx=5)
+        font=("MS Gothic", 8),
+        bd=0,
+        width=3
+    ).pack(side=tk.RIGHT)
 
     top_menu = tk.Frame(c_win, bg="#1e1e24")
     top_menu.pack(fill=tk.X, padx=10, pady=5)
@@ -10658,76 +10407,4 @@ if False:
     )
 
 run_animation_loop()
-
-# ★Phase D-2 Step D-2-3: 既存チャットをバックグラウンド起動★
-print("🔍 デバッグ: バックグラウンドチャット起動中...")
-open_custom_chat_window()
-
-# ウィンドウを非表示にする
-if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
-    pet_vars["chat_win"].withdraw()  # ウィンドウを非表示
-    print("✅ バックグラウンドチャット起動完了（非表示）")
-    print(f"   - ウィンドウID: {pet_vars['chat_win']}")
-    print(f"   - タイトル: NAVIKO CHAT / SELF GROWTH")
-    print(f"   - ステータス: バックグラウンド待機中")
-else:
-    print("⚠️ バックグラウンドチャット作成失敗")
-
-
-# ============================================================
-# Vosk音声起動システムの初期化と開始
-# ============================================================
-
-if VOSK_AVAILABLE:
-    try:
-        # Voskモデルパス（小型モデルをデフォルト使用）
-        vosk_model_path = ROOT / "vosk_models" / "vosk-model-small-ja-0.22"
-        
-        if vosk_model_path.exists():
-            # ウェイクワード検出時のコールバック関数
-            def on_wake_word_detected(detected_text):
-                """
-                ウェイクワード検出時の処理
-                
-                Args:
-                    detected_text (str): 認識されたテキスト
-                """
-                print(f"🎉 ウェイクワード検出: {detected_text}")
-                
-                # チャットウィンドウを表示
-                if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
-                    pet_vars["chat_win"].deiconify()  # ウィンドウを表示
-                    pet_vars["chat_win"].lift()  # 前面に持ってくる
-                    pet_vars["chat_win"].focus_force()  # フォーカスを当てる
-                    print("✅ チャットウィンドウを表示しました")
-                    
-                    # ナビ子のwaving状態に変更
-                    pet_vars["state"] = "waving"
-                    pet_vars["frame"] = 0
-                else:
-                    print("⚠️ チャットウィンドウが見つかりません")
-            
-            # VoiceWakeWordDetector初期化
-            voice_detector = VoiceWakeWordDetector(
-                model_path=str(vosk_model_path),
-                wake_words=["ナビ子", "なびこ", "ナビコ"]
-            )
-            
-            # 音声認識開始
-            voice_detector.start_listening(on_wake_word_detected)
-            
-            print("✅ Vosk音声起動システム開始")
-            print("   - ウェイクワード: 'hey、ナビ子' または 'ナビ子'")
-            print("   - モデル: 小型（vosk-model-small-ja-0.22）")
-        else:
-            print(f"⚠️ Voskモデルが見つかりません: {vosk_model_path}")
-            print("   音声起動機能は無効です")
-    except Exception as e:
-        print(f"❌ Vosk音声起動システムの初期化に失敗: {e}")
-        import traceback
-        traceback.print_exc()
-else:
-    print("⚠️ Vosk音声認識が利用できません（vosk/pyaudioが未インストール）")
-    print("   音声起動機能は無効です")
-
 root.mainloop()
