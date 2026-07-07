@@ -9638,6 +9638,70 @@ def open_custom_chat_window():
 
     top_menu = tk.Frame(c_win, bg="#1e1e24")
     top_menu.pack(fill=tk.X, padx=10, pady=5)
+    
+    # 設定ボタン（左側）
+    def open_settings():
+        print("⚙️ 設定画面（Phase D-3で実装予定）")
+        # TODO: Phase D-3で設定画面を実装
+    
+    settings_btn = tk.Button(
+        top_menu,
+        text="⚙️ 設定",
+        command=open_settings,
+        bg="#3c3c44",
+        fg="white",
+        relief=tk.FLAT,
+        padx=10,
+        pady=5
+    )
+    settings_btn.pack(side=tk.LEFT, padx=5)
+    
+    # クイックプリセットボタン群（右側）
+    preset_frame = tk.Frame(top_menu, bg="#1e1e24")
+    preset_frame.pack(side=tk.RIGHT, padx=5)
+    
+    def apply_preset(preset_name):
+        print(f"🎭 プリセット切り替え: {preset_name}（Phase D-3で実装予定）")
+        # TODO: Phase D-3でプリセット切り替え機能を実装
+    
+    # デフォルトプリセットボタン
+    default_btn = tk.Button(
+        preset_frame,
+        text="デフォルト",
+        command=lambda: apply_preset("デフォルト"),
+        bg="#4a9eff",
+        fg="white",
+        relief=tk.FLAT,
+        padx=8,
+        pady=3
+    )
+    default_btn.pack(side=tk.LEFT, padx=2)
+    
+    # ノベル風プリセットボタン
+    novel_btn = tk.Button(
+        preset_frame,
+        text="ノベル風",
+        command=lambda: apply_preset("ノベル風"),
+        bg="#3c3c44",
+        fg="#888888",
+        relief=tk.FLAT,
+        padx=8,
+        pady=3
+    )
+    novel_btn.pack(side=tk.LEFT, padx=2)
+    
+    # RPG風プリセットボタン
+    rpg_btn = tk.Button(
+        preset_frame,
+        text="RPG風",
+        command=lambda: apply_preset("RPG風"),
+        bg="#3c3c44",
+        fg="#888888",
+        relief=tk.FLAT,
+        padx=8,
+        pady=3
+    )
+    rpg_btn.pack(side=tk.LEFT, padx=2)
 
     c_area = scrolledtext.ScrolledText(
         c_win,
