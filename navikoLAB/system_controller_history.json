@@ -1,0 +1,85 @@
+[
+  {
+    "timestamp": "2026-07-05T10:46:23.945066",
+    "session_id": "20260705_104620",
+    "operation": "system_initialization",
+    "result": {
+      "success": true,
+      "session_id": "20260705_104620",
+      "modules": {
+        "MetaCognitionEngine": "✅ 成功",
+        "ProblemPatternLearner": "✅ 成功",
+        "NavikoCoreOrchestrator": "✅ 成功",
+        "AutoRecoveryEngine": "✅ 成功",
+        "DatabricksSafetyChecker": "✅ 成功"
+      },
+      "errors": []
+    }
+  },
+  {
+    "timestamp": "2026-07-05T10:52:03.225417",
+    "session_id": "20260705_105203",
+    "operation": "system_initialization",
+    "result": {
+      "success": true,
+      "session_id": "20260705_105203",
+      "modules": {
+        "MetaCognitionEngine": "✅ 成功",
+        "ProblemPatternLearner": "✅ 成功",
+        "NavikoCoreOrchestrator": "✅ 成功",
+        "AutoRecoveryEngine": "✅ 成功",
+        "DatabricksSafetyChecker": "✅ 成功"
+      },
+      "errors": []
+    }
+  },
+  {
+    "timestamp": "2026-07-05T10:52:03.329909",
+    "session_id": "20260705_105203",
+    "operation": "error_handling",
+    "result": {
+      "error": "統合テスト用エラー",
+      "context": {
+        "test": "integration_test",
+        "component": "Phase3"
+      },
+      "diagnosis": null,
+      "recovery_attempt": null,
+      "pattern_learned": false,
+      "success": false
+    }
+  },
+  {
+    "timestamp": "2026-07-05T10:52:31.035398",
+    "session_id": "20260705_105230",
+    "operation": "system_initialization",
+    "result": {
+      "success": true,
+      "session_id": "20260705_105230",
+      "modules": {
+        "MetaCognitionEngine": "✅ 成功",
+        "ProblemPatternLearner": "✅ 成功",
+        "NavikoCoreOrchestrator": "✅ 成功",
+        "AutoRecoveryEngine": "✅ 成功",
+        "DatabricksSafetyChecker": "✅ 成功"
+      },
+      "errors": []
+    }
+  },
+  {
+    "timestamp": "2026-07-05T10:52:31.139527",
+    "session_id": "20260705_105230",
+    "operation": "error_handling",
+    "result": {
+      "error": "統合テスト用エラー",
+      "context": {
+        "test": "integration_test",
+        "component": "Phase3"
+      },
+      "diagnosis": null,
+      "recovery_attempt": null,
+      "pattern_learned": false,
+      "success": false
+    }
+  }
+]

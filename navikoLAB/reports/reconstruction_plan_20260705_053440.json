@@ -1,0 +1,183 @@
+{
+  "metadata": {
+    "created_at": "2026-07-05T05:34:40.234700",
+    "status": "approved",
+    "version": "1.0.0",
+    "author": "Genie Code"
+  },
+  "core_modules": {
+    "protection_status": "mandatory",
+    "modules": [
+      {
+        "name": "meta_cognition_engine.py",
+        "size": 25377,
+        "phase": "Phase 1"
+      },
+      {
+        "name": "problem_pattern_learner.py",
+        "size": 23168,
+        "phase": "Phase 1"
+      },
+      {
+        "name": "core_orchestrator.py",
+        "size": 15725,
+        "phase": "Phase 1"
+      },
+      {
+        "name": "auto_recovery_engine.py",
+        "size": 21134,
+        "phase": "Phase 2"
+      },
+      {
+        "name": "databricks_safety_checker.py",
+        "size": 13625,
+        "phase": "Phase 2"
+      },
+      {
+        "name": "advanced_learning_analyzer.py",
+        "size": 33518,
+        "phase": "Phase 3"
+      },
+      {
+        "name": "self_evolution_engine.py",
+        "size": 31370,
+        "phase": "Phase 3"
+      },
+      {
+        "name": "knowledge_graph_builder.py",
+        "size": 17255,
+        "phase": "Phase 3"
+      },
+      {
+        "name": "problem_patterns.db",
+        "size": 0,
+        "phase": "Phase 1"
+      },
+      {
+        "name": "run_integration_test.py",
+        "size": 7819,
+        "phase": "Testing"
+      }
+    ]
+  },
+  "deletion_targets": {
+    "backup_files": {
+      "count": 51,
+      "size_kb": 76,
+      "priority": "highest",
+      "risk": "low"
+    },
+    "large_files": {
+      "count": 2,
+      "size_mb": 58.2,
+      "files": [
+        {
+          "name": "python-manager-26.3.msix",
+          "size_mb": 47.0
+        },
+        {
+          "name": "docs/auto_documentation_20260626_211640.md",
+          "size_mb": 11.2
+        }
+      ],
+      "priority": "highest",
+      "risk": "low"
+    },
+    "test_files": {
+      "count": 29,
+      "status": "review_required",
+      "priority": "medium",
+      "risk": "medium"
+    }
+  },
+  "execution_plan": {
+    "phase_a": {
+      "name": "クリーンアップ",
+      "priority": "highest",
+      "estimated_time_minutes": 20,
+      "tasks": [
+        {
+          "id": "A-1",
+          "name": "バックアップファイル削除",
+          "time_minutes": 10,
+          "risk": "low"
+        },
+        {
+          "id": "A-2",
+          "name": "大容量ファイル削除",
+          "time_minutes": 5,
+          "risk": "low"
+        }
+      ]
+    },
+    "phase_b": {
+      "name": "コア機能保護メカニズム",
+      "priority": "high",
+      "estimated_time_minutes": 120,
+      "tasks": [
+        {
+          "id": "B-1",
+          "name": "モジュール保護システム実装",
+          "time_minutes": 90,
+          "risk": "medium"
+        },
+        {
+          "id": "B-2",
+          "name": "ディレクトリ再編成",
+          "time_minutes": 45,
+          "risk": "medium"
+        }
+      ]
+    },
+    "phase_c": {
+      "name": "拡張可能アーキテクチャ",
+      "priority": "medium",
+      "estimated_time_minutes": 360,
+      "tasks": [
+        {
+          "id": "C-1",
+          "name": "テストフレームワーク強化",
+          "time_minutes": 150,
+          "risk": "low"
+        },
+        {
+          "id": "C-2",
+          "name": "プラグインシステム設計",
+          "time_minutes": 300,
+          "risk": "high"
+        }
+      ]
+    }
+  },
+  "next_session_checklist": [
+    {
+      "step": 1,
+      "name": "環境確認",
+      "time_minutes": 5,
+      "items": [
+        "APIキー設定",
+        "Git同期状態",
+        "コアモジュール存在"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Phase A実行",
+      "time_minutes": 20,
+      "items": [
+        "バックアップ削除",
+        "大容量ファイル削除",
+        "Git同期"
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Phase B準備",
+      "time_minutes": 30,
+      "items": [
+        "保護ディレクトリ作成",
+        "依存関係分析"
+      ]
+    }
+  ]
+}

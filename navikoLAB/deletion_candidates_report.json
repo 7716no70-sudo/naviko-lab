@@ -1,0 +1,86 @@
+{
+  "high_priority": {
+    "description": "明確に不要な大容量ファイル（即座に削除可能）",
+    "items": [
+      {
+        "path": "python-manager-26.3.msix",
+        "size": "45MB",
+        "reason": "Pythonインストーラー。開発環境用の一時ファイル。本番システムで不要。",
+        "risk": "低（システムに影響なし）"
+      },
+      {
+        "path": "docs/auto_documentation_20260626_211640.md",
+        "size": "11MB",
+        "reason": "2026-06-26生成の古い自動ドキュメント。既に新しいドキュメント（ARCHITECTURE.md等）が存在。",
+        "risk": "低（新しいドキュメントで代替可能）"
+      }
+    ],
+    "total_size": "56MB"
+  },
+  "medium_priority": {
+    "description": "テスト・バックアップ関連ディレクトリ（レビュー後削除）",
+    "items": [
+      {
+        "path": "recovery_test/",
+        "size": "73KB",
+        "reason": "リカバリー機能のテスト用ディレクトリ。本番システムで不要。",
+        "risk": "低（テスト専用、本体に影響なし）"
+      },
+      {
+        "path": "restore_test/",
+        "size": "73KB",
+        "reason": "リストア機能のテスト用ディレクトリ。本番システムで不要。",
+        "risk": "低（テスト専用、本体に影響なし）"
+      },
+      {
+        "path": "backup_verification/",
+        "size": "12KB",
+        "reason": "バックアップ検証テストファイル。本番システムで不要。",
+        "risk": "低（テスト専用）"
+      },
+      {
+        "path": "external_backup/",
+        "size": "13KB",
+        "reason": "外部バックアップテストファイル。本番システムで不要。",
+        "risk": "低（テスト専用）"
+      },
+      {
+        "path": "run_integration_test.py",
+        "size": "8KB",
+        "reason": "統合テスト実行スクリプト。開発用。",
+        "risk": "低（テスト専用）"
+      },
+      {
+        "path": "test_autonomous_core_capability_connection.py",
+        "size": "3KB",
+        "reason": "コア機能接続テスト。開発用。",
+        "risk": "低（テスト専用）"
+      }
+    ],
+    "total_size": "182KB"
+  },
+  "low_priority": {
+    "description": "更に調査が必要な大容量ディレクトリ",
+    "items": [
+      {
+        "path": "planner_feedback/",
+        "size": "531KB",
+        "reason": "プランナーフィードバック関連ファイル多数。使用状況要確認。",
+        "risk": "中（本体との連携を確認する必要あり）"
+      },
+      {
+        "path": "app_operator/",
+        "size": "409KB",
+        "reason": "アプリ操作関連ファイル多数。使用状況要確認。",
+        "risk": "中（本体との連携を確認する必要あり）"
+      },
+      {
+        "path": "stable_life/",
+        "size": "328KB",
+        "reason": "安定性関連ファイル。使用状況要確認。",
+        "risk": "中（安定性に関わる可能性）"
+      }
+    ],
+    "total_size": "1.3MB"
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "level": "CRITICAL",
+    "category": "ERROR_RATE",
+    "message": "エラー率が危険レベル: 25.0%",
+    "threshold": 10.0,
+    "current_value": 25.0,
+    "timestamp": "2026-07-05T10:52:31.137721"
+  },
+  {
+    "level": "CRITICAL",
+    "category": "ERROR_RATE",
+    "message": "エラー率が危険レベル: 40.0%",
+    "threshold": 10.0,
+    "current_value": 40.0,
+    "timestamp": "2026-07-05T10:52:31.241912"
+  }
+]

@@ -1,0 +1,34 @@
+
+---
+### 🚀 CURRENT ACTIVE PROJECT: Naviko システム再構成（Phase A準備完了）
+---
+
+**プロジェクト目的**: 不要機能の削除・コア機能保護・拡張可能アーキテクチャ構築
+**開始日**: 2026-07-05
+**現在のステータス**: ✅ 再構成プラン策定完了、Phase A実行準備完了
+
+#### 次回セッション開始時の必須アクション
+
+1. **再構成プラン確認**（1分）
+   ```python
+   with open("/Workspace/Users/7716no70@gmail.com/naviko-lab/navikoLAB/reports/reconstruction_plan_20260705_053440.md", 'r') as f:
+       print(f.read()[:2000])  # 最初の2000文字表示
+   ```
+
+2. **Phase A実行判断**
+   - ユーザーに「Phase A（クリーンアップ）を実行しますか？」と確認
+   - 承認後にバックアップファイル削除開始
+
+#### 保護対象モジュール（Phase 1-3）
+**絶対に削除・変更不可**:
+- meta_cognition_engine.py, problem_pattern_learner.py, core_orchestrator.py
+- auto_recovery_engine.py, databricks_safety_checker.py
+- advanced_learning_analyzer.py, self_evolution_engine.py, knowledge_graph_builder.py
+- problem_patterns.db, run_integration_test.py
+
+#### 引き継ぎファイル
+- **完全版**: reconstruction_plan_20260705_053440.md
+- **構造化データ**: reconstruction_plan_20260705_053440.json
+- **クイックリファレンス**: reconstruction_quick_ref_20260705_053440.md
+
+**Git同期**: Workspace → GitHub → ローカルPC（次回セッションで実施）
