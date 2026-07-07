@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 from pathlib import Path
 import time
@@ -9428,6 +9428,11 @@ def open_custom_chat_window():
         t_bar,
         text="×",
         command=hide_chat_window,
+        bg="#2b2b36",
+        fg="#ffffff",
+        font=("MS Gothic", 10, "bold"),
+        bd=0
+    ).pack(side=tk.RIGHT, padx=5)
 
     top_menu = tk.Frame(c_win, bg="#1e1e24")
     top_menu.pack(fill=tk.X, padx=10, pady=5)
