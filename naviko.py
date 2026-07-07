@@ -9419,16 +9419,15 @@ def open_custom_chat_window():
         font=("MS Gothic", 9, "bold")
     ).pack(side=tk.LEFT, padx=5)
 
+    # ×ボタンをクリック時、ウィンドウを非表示（バックグラウンド待機）
+    def hide_chat_window():
+        c_win.withdraw()
+        print("✅ チャットウィンドウを非表示にしました（バックグラウンド待機中）")
+    
     tk.Button(
         t_bar,
         text="×",
-        command=c_win.destroy,
-        bg="#aa3333",
-        fg="#ffffff",
-        font=("MS Gothic", 8),
-        bd=0,
-        width=3
-    ).pack(side=tk.RIGHT)
+        command=hide_chat_window,
 
     top_menu = tk.Frame(c_win, bg="#1e1e24")
     top_menu.pack(fill=tk.X, padx=10, pady=5)
