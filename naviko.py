@@ -78,6 +78,13 @@ except ImportError:
     print("⚠️ Vosk音声認識が利用できません（vosk/pyaudioが未インストール）")
 # === Vosk音声認識インポート end ===
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Voskモデルパス定義（Phase D-4-4）
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VOSK_MODEL_SMALL = "vosk_models/vosk-model-small-ja-0.22"  # 小型モデル（40MB）
+VOSK_MODEL_LARGE = "vosk_models/vosk-model-ja-0.22"        # 大型モデル（1.8GB）
+CURRENT_VOSK_MODEL = VOSK_MODEL_SMALL  # デフォルトは小型モデル
+
 # Phase 3モジュールインポート
 try:
     from navikoLAB.system_health_monitor import SystemHealthMonitor
@@ -138,6 +145,7 @@ class VoiceWakeWordDetector:
         self.is_listening = False
         self.callback = None
         self.recognition_thread = None
+        self.current_model_path = model_path  # 現在のモデルパスを保存（Phase D-4-4）
         
     def start_listening(self, callback):
         """
@@ -173,6 +181,42 @@ class VoiceWakeWordDetector:
             self.recognition_thread.join(timeout=2.0)
         print("🔇 バックグラウンド音声認識停止")
         
+    
+    def switch_model(self, model_path):
+        """
+        Voskモデルを切り替える（Phase D-4-4）
+        
+        Args:
+            model_path (str): 新しいVoskモデルのパス
+                小型: "vosk_models/vosk-model-small-ja-0.22"
+                大型: "vosk_models/vosk-model-ja-0.22"
+        
+        Returns:
+            bool: モデル切り替え成功/失敗
+        """
+        # 音声認識が実行中の場合は停止
+        was_listening = self.is_listening
+        if was_listening:
+            print("🔄 音声認識を一時停止してモデル切り替え...")
+            self.stop_listening()
+        
+        # モデル切り替え
+        try:
+            print(f"🔄 Voskモデルを切り替え中: {model_path}")
+            self.model = vosk.Model(model_path)
+            self.current_model_path = model_path
+            print(f"✅ Voskモデル切り替え完了")
+            
+            # 音声認識を再開
+            if was_listening and self.callback:
+                print("🔄 音声認識を再開...")
+                self.start_listening(self.callback)
+            
+            return True
+        except Exception as e:
+            print(f"❌ モデル切り替え失敗: {e}")
+            return False
+
     def _recognition_loop(self):
         """
         音声認識ループ（バックグラウンドスレッド）
@@ -386,6 +430,105 @@ autonomous_core = AutonomousCore(
 )
 
 # =====================
+
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Voskモデル切り替えヘルパー関数（Phase D-4-4）
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def switch_vosk_model(detector, size='small'):
+    """
+    Voskモデルを切り替える
+    
+    Args:
+        detector (VoiceWakeWordDetector): Detectorインスタンス
+        size (str): 'small'（小型）または 'large'（大型）
+    
+    Returns:
+        bool: 切り替え成功/失敗
+    """
+    global CURRENT_VOSK_MODEL
+    
+    if size == 'small':
+        model_path = VOSK_MODEL_SMALL
+        model_name = "小型モデル（40MB・認識精度85-90%）"
+    elif size == 'large':
+        model_path = VOSK_MODEL_LARGE
+        model_name = "大型モデル（1.8GB・認識精度95-98%）"
+    else:
+        print(f"❌ 不正なサイズ指定: {size}")
+        return False
+    
+    # モデルファイルの存在確認
+    if not os.path.exists(model_path):
+        print(f"❌ モデルが見つかりません: {model_path}")
+        print(f"   大型モデルのダウンロードが必要です")
+        print(f"   URL: https://alphacephei.com/vosk/models/vosk-model-ja-0.22.zip")
+        return False
+    
+    # モデル切り替え実行
+    print(f"🔄 {model_name}に切り替え中...")
+    success = detector.switch_model(model_path)
+    
+    if success:
+        CURRENT_VOSK_MODEL = model_path
+        print(f"✅ モデル切り替え完了: {model_name}")
+    
+    return success
+
+
+def download_large_vosk_model():
+    """
+    大型Voskモデルをダウンロード（Phase D-4-4）
+    
+    注意: 1.8GBのダウンロードが必要です（10-15分）
+    
+    Returns:
+        bool: ダウンロード成功/失敗
+    """
+    import urllib.request
+    import zipfile
+    
+    model_url = "https://alphacephei.com/vosk/models/vosk-model-ja-0.22.zip"
+    zip_path = "vosk-model-ja-0.22.zip"
+    extract_dir = "vosk_models"
+    
+    print("=" * 70)
+    print("📥 大型Voskモデルをダウンロード中...")
+    print("=" * 70)
+    print(f"URL: {model_url}")
+    print(f"サイズ: 約1.8GB")
+    print(f"推定時間: 10-15分")
+    print()
+    
+    try:
+        # ダウンロード
+        print("🔄 ダウンロード開始...")
+        urllib.request.urlretrieve(model_url, zip_path)
+        print("✅ ダウンロード完了")
+        
+        # 解凍
+        print("🔄 解凍中...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+        print("✅ 解凍完了")
+        
+        # zipファイル削除
+        os.remove(zip_path)
+        print("✅ 一時ファイル削除完了")
+        
+        print("=" * 70)
+        print("🎉 大型Voskモデルのダウンロード完了！")
+        print("=" * 70)
+        print(f"保存先: {extract_dir}/vosk-model-ja-0.22")
+        print()
+        return True
+        
+    except Exception as e:
+        print(f"❌ ダウンロード失敗: {e}")
+        return False
+
 
 def diagnose_and_handle_error(error, context=None):
     """
