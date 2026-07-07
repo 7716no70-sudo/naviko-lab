@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 from pathlib import Path
 import time
@@ -9342,26 +9342,71 @@ def run_original_lab_autonomous_flow_from_naviko(user_goal):
 # === Original Naviko LAB Bridge caller end ===
 
 def open_custom_chat_window():
+    print("🔍 デバッグ: open_custom_chat_window()開始")
+    
     if pet_vars["chat_win"] and pet_vars["chat_win"].winfo_exists():
+        print("🔍 デバッグ: 既存ウィンドウを破棄")
         pet_vars["chat_win"].destroy()
         pet_vars["chat_win"] = None
-        return
-    
+        # returnを削除（新規ウィンドウを作成する）   
+
     # GUIレイアウト設定を読み込み
+    print("🔍 デバッグ: load_gui_layout_settings()呼び出し")
     layout = load_gui_layout_settings()
+    print("🔍 デバッグ: load_gui_layout_settings()完了")
 
-    c_win = tk.Toplevel(root)
+    print("🔍 デバッグ: tk.Toplevel(root)呼び出し")
+    try:
+        c_win = tk.Toplevel(root)
+        print(f"🔍 デバッグ: c_win作成完了: {c_win}")
+    except Exception as e:
+        print(f"❌ エラー: tk.Toplevel(root)失敗: {e}")
+        import traceback
+        traceback.print_exc()
+        return  # エラー時はreturn
+    
     pet_vars["chat_win"] = c_win
+    print("🔍 デバッグ: pet_vars['chat_win']設定完了")
 
+    print("🔍 デバッグ: ウィンドウ属性設定開始")
     c_win.overrideredirect(False)
     c_win.wm_attributes("-topmost", True)
     c_win.configure(bg=layout["bg_color"])
+    print("🔍 デバッグ: ウィンドウ属性設定完了")
 
+
+    # ★ウィンドウ位置・サイズ・状態の診断★
     w_w = int(BASE_WIDTH * current_scale)
-    c_win.geometry(
-        f"{layout['window_width']}x{layout['window_height']}+{root.winfo_x() + w_w + 10}+{root.winfo_y() - 50}"
-    )
+    
+    # Y座標がマイナスにならないように調整
+    y_pos = max(50, root.winfo_y() - 50)  # 最小値を50に設定（画面上端から50px下）
+    x_pos = root.winfo_x() + w_w + 10
+    
+    # X座標が画面外にならないように調整
+    screen_width = root.winfo_screenwidth()
+    if x_pos + layout['window_width'] > screen_width:
+        x_pos = screen_width - layout['window_width'] - 50  # 画面右端から50px左
+    
+    geo_str = f"{layout['window_width']}x{layout['window_height']}+{x_pos}+{y_pos}"
+    print(f"🔍 デバッグ: ウィンドウgeometry計算: {geo_str}")
+    print(f"🔍 デバッグ: root位置: x={root.winfo_x()}, y={root.winfo_y()}")
+    print(f"🔍 デバッグ: 調整後の位置: x={x_pos}, y={y_pos}")
+    print(f"🔍 デバッグ: ウィンドウサイズ: {layout['window_width']}    x{layout['window_height']}")
+
+    
+    c_win.geometry(geo_str)
     c_win.resizable(True, True)
+    
+    # ★ウィンドウ状態確認★
+    print(f"🔍 デバッグ: ウィンドウ設定後の位置: x={c_win.winfo_x()}, y={c_win.winfo_y()}")
+    print(f"🔍 デバッグ: ウィンドウ表示状態: {c_win.state()}")
+    print(f"🔍 デバッグ: ウィンドウ最前面: {c_win.attributes('-topmost')}")
+    
+    # ★強制的に前面表示★
+    c_win.lift()
+    c_win.focus_force()
+    c_win.update()
+    print("🔍 デバッグ: ウィンドウ強制前面表示実行")
 
     t_bar = tk.Frame(c_win, bg="#2b2b36", height=25)
     t_bar.pack(fill=tk.X, side=tk.TOP)
@@ -10407,4 +10452,19 @@ if False:
     )
 
 run_animation_loop()
+
+# ★Phase D-2 Step D-2-3: 既存チャットをバックグラウンド起動★
+print("🔍 デバッグ: バックグラウンドチャット起動中...")
+open_custom_chat_window()
+
+# ウィンドウを非表示にする
+if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
+    pet_vars["chat_win"].withdraw()  # ウィンドウを非表示
+    print("✅ バックグラウンドチャット起動完了（非表示）")
+    print(f"   - ウィンドウID: {pet_vars['chat_win']}")
+    print(f"   - タイトル: NAVIKO CHAT / SELF GROWTH")
+    print(f"   - ステータス: バックグラウンド待機中")
+else:
+    print("⚠️ バックグラウンドチャット作成失敗")
+
 root.mainloop()
