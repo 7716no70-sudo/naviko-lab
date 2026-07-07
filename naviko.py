@@ -10681,7 +10681,7 @@ else:
 if VOSK_AVAILABLE:
     try:
         # Voskモデルパス（小型モデルをデフォルト使用）
-        vosk_model_path = ROOT / "vosk_models" / "vosk-model-small-ja-0.22"
+        vosk_model_path = Path("C:/vosk_models/vosk-model-small-ja-0.22")
         
         if vosk_model_path.exists():
             # ウェイクワード検出時のコールバック関数
