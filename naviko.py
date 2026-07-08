@@ -8502,6 +8502,16 @@ if PHASE3_AVAILABLE:
 else:
     print("⚠️ Phase 3モジュール無効（インポート失敗）")
 
+
+# ============================================================
+# ③-1: 起動時非表示機能（--hidden引数対応）
+# ============================================================
+START_HIDDEN = "--hidden" in sys.argv
+if START_HIDDEN:
+    print("🔇 バックグラウンドモードで起動します（--hidden）")
+else:
+    print("🖥️ 通常モードで起動します")
+
 root = tk.Tk()
 root.title("NavikoPet")
 root.overrideredirect(True)
@@ -8512,6 +8522,12 @@ try:
     root.attributes("-transparentcolor", "#00ff00")
 except Exception:
     pass
+
+# 起動時非表示の場合、ウィンドウを隠す
+if START_HIDDEN:
+    root.withdraw()  # ウィンドウを非表示にする
+    print("✅ メインウィンドウを非表示にしました（音声で呼び出し可能）")
+
 
 root.geometry(f"{BASE_WIDTH}x{BASE_HEIGHT}+500+300")
 
@@ -11036,6 +11052,20 @@ if VOSK_AVAILABLE:
                 """
                 print(f"🎉 ウェイクワード検出: {detected_text}")
                 
+
+                # ③-1: 「隠れて」コマンド処理
+                if "隠れて" in detected_text or "バックグラウンド" in detected_text or "かくれて" in detected_text:
+                    # チャットウィンドウを非表示にする
+                    if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
+                        pet_vars["chat_win"].withdraw()  # ウィンドウを非表示
+                        print("✅ チャットウィンドウを非表示にしました（バックグラウンドモード）")
+                        # ナビ子のidle状態に変更
+                        pet_vars["state"] = "idle"
+                        pet_vars["frame"] = 0
+                    else:
+                        print("⚠️ チャットウィンドウが見つかりません")
+                    return  # ここで処理終了
+
                 # チャットウィンドウを表示
                 if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
                     pet_vars["chat_win"].deiconify()  # ウィンドウを表示
