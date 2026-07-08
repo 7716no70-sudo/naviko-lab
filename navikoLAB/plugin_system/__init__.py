@@ -8,8 +8,8 @@ Author: Naviko Development Team
 Version: 1.0.0
 """
 
-from .base_plugin import BasePlugin
-from .plugin_types import PluginType, PluginStatus
+from .base_plugin import BasePlugin, PluginStatus
+from .plugin_types import PluginType
 from .universal_plugin_registry import UniversalPluginRegistry
 from .plugin_loader import PluginLoader
 
