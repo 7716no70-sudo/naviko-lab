@@ -9,8 +9,8 @@ Date: 2026-07-08
 Version: 1.0.0
 """
 
-from .self_growth_engine import SelfGrowthEngine, PerformanceLevel, ExecutionRecord
+from .self_growth_engine import SelfGrowthEngine, PerformanceRecord
 
 __version__ = "1.0.0"
 __author__ = "Naviko Development Team"
-__all__ = ["SelfGrowthEngine", "PerformanceLevel", "ExecutionRecord"]
+__all__ = ["SelfGrowthEngine", "PerformanceRecord"]
