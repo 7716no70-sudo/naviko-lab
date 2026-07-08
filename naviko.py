@@ -80,6 +80,34 @@ except ImportError as e:
     UniversalPluginRegistry = None
 # === Plugin System import end ===
 
+# === Brain Layer import ===
+try:
+    from navikoLAB.tool_system.tool_registry import ToolRegistry
+    from navikoLAB.capability_engine.capability_engine import CapabilityEngine
+    from navikoLAB.growth_engine.self_growth_engine import SelfGrowthEngine
+    BRAIN_LAYER_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 脳みそレイヤーが見つかりません: {e}")
+    BRAIN_LAYER_AVAILABLE = False
+    ToolRegistry = None
+    CapabilityEngine = None
+    SelfGrowthEngine = None
+# === Brain Layer import end ===
+
+# === Brain Layer import ===
+try:
+    from navikoLAB.tool_system import ToolRegistry, ToolMetadata, ToolCategory, ToolComplexity
+    from navikoLAB.capability_engine import CapabilityEngine, ContextType
+    from navikoLAB.growth_engine import SelfGrowthEngine, PerformanceRecord
+    BRAIN_LAYER_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 脳みそレイヤーが見つかりません: {e}")
+    BRAIN_LAYER_AVAILABLE = False
+    ToolRegistry = None
+    CapabilityEngine = None
+    SelfGrowthEngine = None
+# === Brain Layer import end ===
+
 # === Vosk音声認識インポート ===
 try:
     import vosk
@@ -6899,17 +6927,6 @@ def groq_chat(user_text):
 
     if special_reply:
         return special_reply
-
-    # === デバッグコード追加 ===
-    import os
-    debug_key = os.environ.get("GROQ_API_KEY", "")
-    print(f"🔍 デバッグ: 環境変数から再取得 APIKey長さ = {len(debug_key)}")
-    print(f"🔍 デバッグ: 環境変数先頭10文字 = {debug_key[:10] if debug_key else 'なし'}")
-    print(f"🔍 デバッグ: GROQ_API_KEY変数長さ = {len(GROQ_API_KEY)}")
-    print(f"🔍 デバッグ: GROQ_API_KEY先頭10文字 = {GROQ_API_KEY[:10] if GROQ_API_KEY else 'なし'}")
-    print(f"🔍 デバッグ: 一致? {debug_key == GROQ_API_KEY}")
-    print(f"🔍 デバッグ: Authorizationヘッダー = Bearer {GROQ_API_KEY[:15]}...")
-    # === デバッグコード終了 ===
 
     if not GROQ_API_KEY or "ここに" in GROQ_API_KEY:
         return "…はぁ。APIキーが未設定です。GROQ_API_KEY に新しいキーを入れてください。"
