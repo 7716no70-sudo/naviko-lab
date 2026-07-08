@@ -10929,6 +10929,51 @@ else:
 
 
 # ============================================================
+# Brain Layer (脳みそレイヤー) 初期化
+# ============================================================
+
+if BRAIN_LAYER_AVAILABLE:
+    try:
+        print("🧠 脳みそレイヤーを初期化中...")
+        
+        # ToolRegistry初期化
+        tool_registry = ToolRegistry.get_instance()
+        print("✅ ToolRegistry初期化完了")
+        
+        # CapabilityEngine初期化
+        capability_engine = CapabilityEngine.get_instance()
+        capability_engine.set_tool_registry(tool_registry)
+        
+        # プラグインシステムと連携
+        if PLUGIN_SYSTEM_AVAILABLE:
+            try:
+                plugin_registry = UniversalPluginRegistry.get_instance()
+                capability_engine.set_plugin_registry(plugin_registry)
+                print("✅ CapabilityEngine初期化完了（プラグイン連携有効）")
+            except Exception as e:
+                print(f"⚠️ プラグイン連携の設定に失敗: {e}")
+                print("✅ CapabilityEngine初期化完了（プラグイン連携なし）")
+        else:
+            print("✅ CapabilityEngine初期化完了（プラグイン連携なし）")
+        
+        # SelfGrowthEngine初期化
+        growth_engine = SelfGrowthEngine.get_instance()
+        print("✅ SelfGrowthEngine初期化完了")
+        
+        print("🎉 脳みそレイヤー初期化完了！")
+        print("　　- ToolRegistry: ツール管理システム")
+        print("　　- CapabilityEngine: コンテキスト分析・最適選択")
+        print("　　- SelfGrowthEngine: 学習・成長システム")
+        
+    except Exception as e:
+        print(f"❌ 脳みそレイヤーの初期化に失敗: {e}")
+        import traceback
+        traceback.print_exc()
+else:
+    print("⚠️ 脳みそレイヤーが利用できません")
+
+
+# ============================================================
 # Vosk音声起動システムの初期化と開始
 # ============================================================
 
