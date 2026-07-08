@@ -92,8 +92,6 @@ except ImportError as e:
     ToolRegistry = None
     CapabilityEngine = None
     SelfGrowthEngine = None
-# === Brain Layer import end ===
-
 # === Brain Layer import ===
 try:
     from navikoLAB.tool_system import ToolRegistry, ToolMetadata, ToolCategory, ToolComplexity
