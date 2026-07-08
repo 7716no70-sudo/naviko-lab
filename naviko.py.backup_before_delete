@@ -92,6 +92,19 @@ except ImportError as e:
     ToolRegistry = None
     CapabilityEngine = None
     SelfGrowthEngine = None
+# === Brain Layer import ===
+try:
+    from navikoLAB.tool_system import ToolRegistry, ToolMetadata, ToolCategory, ToolComplexity
+    from navikoLAB.capability_engine import CapabilityEngine, ContextType
+    from navikoLAB.growth_engine import SelfGrowthEngine, PerformanceRecord
+    BRAIN_LAYER_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ 脳みそレイヤーが見つかりません: {e}")
+    BRAIN_LAYER_AVAILABLE = False
+    ToolRegistry = None
+    CapabilityEngine = None
+    SelfGrowthEngine = None
+# === Brain Layer import end ===
 
 # === Vosk音声認識インポート ===
 try:
