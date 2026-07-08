@@ -43,7 +43,6 @@ class CapabilityEngine:
         
         self._tool_registry = None
         self._plugin_registry = None
-        self._growth_engine = None
         self._context_history: List[Dict[str, Any]] = []
         self._execution_stats: Dict[str, int] = {}
     
@@ -75,16 +74,6 @@ class CapabilityEngine:
         """
         self._plugin_registry = plugin_registry
         print("✅ PluginRegistry 連携完了")
-    
-    def set_growth_engine(self, growth_engine):
-        """
-        SelfGrowthEngineを設定
-        
-        Args:
-            growth_engine: SelfGrowthEngineインスタンス
-        """
-        self._growth_engine = growth_engine
-        print("✅ SelfGrowthEngine 連携完了")
     
     def analyze_context(self, user_input: str, context_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -256,10 +245,6 @@ class CapabilityEngine:
         Returns:
             Dict[str, Any]: 実行結果
         """
-        import time
-        
-        start_time = time.time()
-        
         # 1. コンテキスト分析
         analysis = self.analyze_context(user_input, context_data)
         
@@ -280,43 +265,26 @@ class CapabilityEngine:
             "success": False
         }
         
-        capability_name = None
-        
         try:
             if tool_name and self._tool_registry:
                 # ツール実行
-                capability_name = f"tool:{tool_name}"
                 result["execution_result"] = self._tool_registry.execute_tool(tool_name, **params)
                 result["success"] = True
-                self._update_stats(capability_name)
+                self._update_stats(f"tool:{tool_name}")
                 
             elif plugin_name and self._plugin_registry:
                 # プラグイン実行
-                capability_name = f"plugin:{plugin_name}"
                 plugin = self._plugin_registry.get_plugin(plugin_name)
                 if plugin:
                     result["execution_result"] = plugin.execute(**params)
                     result["success"] = True
-                    self._update_stats(capability_name)
+                    self._update_stats(f"plugin:{plugin_name}")
             else:
                 result["execution_result"] = "適切なツール/プラグインが見つかりませんでした"
                 
         except Exception as e:
             result["execution_result"] = f"実行エラー: {e}"
             result["success"] = False
-        
-        # 実行時間計測
-        execution_time = time.time() - start_time
-        
-        # SelfGrowthEngineへパフォーマンス記録
-        if self._growth_engine and capability_name:
-            self._growth_engine.record_performance(
-                capability_name=capability_name,
-                success=result["success"],
-                execution_time=execution_time,
-                context={"user_input": user_input, "params": params},
-                result=result["execution_result"]
-            )
         
         return result
     
@@ -346,7 +314,6 @@ class CapabilityEngine:
         print("=" * 60)
         print(f"ToolRegistry: {'✅ 連携済み' if self._tool_registry else '❌ 未設定'}")
         print(f"PluginRegistry: {'✅ 連携済み' if self._plugin_registry else '❌ 未設定'}")
-        print(f"SelfGrowthEngine: {'✅ 連携済み' if self._growth_engine else '❌ 未設定'}")
         print(f"コンテキスト履歴: {stats['context_history_count']} 件")
         print(f"総実行回数: {stats['total_executions']} 回")
         print()
