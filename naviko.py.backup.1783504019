@@ -11000,9 +11000,6 @@ if BRAIN_LAYER_AVAILABLE:
         growth_engine = SelfGrowthEngine.get_instance()
         print("✅ SelfGrowthEngine初期化完了")
         
-        # CapabilityEngineにSelfGrowthEngineを連携
-        capability_engine.set_growth_engine(growth_engine)
-        
         print("🎉 脳みそレイヤー初期化完了！")
         print("　　- ToolRegistry: ツール管理システム")
         print("　　- CapabilityEngine: コンテキスト分析・最適選択")
