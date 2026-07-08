@@ -117,7 +117,7 @@ class CapabilityEngine:
             return ContextType.USER_REQUEST
     
     def _extract_keywords(self, user_input: str) -> List[str]:
-        """キーワード抽出（強化版）"""
+        """キーワード抽出（簡易版）"""
         keywords = []
         input_lower = user_input.lower()
         
@@ -127,16 +127,10 @@ class CapabilityEngine:
             "api": ["api"],
             "file": ["ファイル", "file"],
             "data": ["データ", "data"],
-            "voice": ["音声", "voice", "話す", "speak"],
-            "read": ["読み込み", "read", "読む"],
-            "write": ["書き込み", "write", "書く", "保存"],
-            "process": ["処理", "process"],
-            "filter": ["フィルタ", "filter", "抽出", "絞り込み"],
-            "map": ["マップ", "map", "変換", "transform"],
-            "reduce": ["リデュース", "reduce", "集約", "aggregate", "合計", "sum"],
-            "tts": ["合成", "synthesize", "tts"],
-            "text": ["テキスト", "text", "文字列"],
-            "math": ["計算", "math", "足す", "引く", "掛ける"]
+            "voice": ["音声", "voice"],
+            "read": ["読み込み", "read"],
+            "write": ["書き込み", "write"],
+            "process": ["処理", "process"]
         }
         
         for key, patterns in keyword_map.items():
@@ -156,7 +150,7 @@ class CapabilityEngine:
     
     def select_best_tool(self, context_analysis: Dict[str, Any]) -> Optional[str]:
         """
-        最適ツール選択（スコアリング機能付き）
+        最適ツール選択
         
         Args:
             context_analysis (Dict[str, Any]): コンテキスト分析結果
@@ -171,30 +165,18 @@ class CapabilityEngine:
         keywords = context_analysis.get("keywords", [])
         
         # キーワードベースでツール検索
-        candidates = {}  # {tool_name: score}
+        candidates = []
         for keyword in keywords:
             tools = self._tool_registry.search_by_tag(keyword)
-            for tool in tools:
-                if tool.name not in candidates:
-                    candidates[tool.name] = 0
-                # マッチしたキーワード数をスコアに加算
-                candidates[tool.name] += 1
+            candidates.extend(tools)
         
         if not candidates:
             return None
         
-        # スコアと優先度で選択
-        # スコアが高い順、同点なら優先度順
-        all_tools = self._tool_registry.list_all_tools()
-        tool_priority_map = {t.name: t.priority for t in all_tools}
+        # 優先度順にソート
+        candidates.sort(key=lambda t: t.priority)
         
-        sorted_candidates = sorted(
-            candidates.items(),
-            key=lambda x: (x[1], -tool_priority_map.get(x[0], 50)),  # スコア降順、優先度昇順
-            reverse=True
-        )
-        
-        return sorted_candidates[0][0] if sorted_candidates else None
+        return candidates[0].name if candidates else None
     
     def select_best_plugin(self, context_analysis: Dict[str, Any]) -> Optional[str]:
         """
