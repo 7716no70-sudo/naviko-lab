@@ -10917,7 +10917,7 @@ if PLUGIN_SYSTEM_AVAILABLE:
             registry = UniversalPluginRegistry.get_instance()
             registry.print_status()
             
-            print(f"✅ プラグインシステム初期化完了（{len(loaded_plugins)}個のプラグインをロード）")
+            print(f"✅ プラグインシステム初期化完了（{loaded_plugins}個のプラグインをロード）")
         else:
             print(f"⚠️ プラグインディレクトリが見つかりません: {plugins_dir}")
     except Exception as e:
