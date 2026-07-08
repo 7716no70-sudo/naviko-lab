@@ -1,0 +1,313 @@
+# -*- coding: utf-8 -*-
+"""
+Naviko Capability Engine - 能力選択エンジン
+
+このモジュールは、コンテキストを分析して最適なツールを選択します。
+
+Author: Naviko Development Team
+Date: 2026-07-08
+Version: 1.0.0
+"""
+
+from typing import Dict, List, Optional, Any
+from enum import Enum
+import threading
+
+
+class ContextType(Enum):
+    """コンテキストタイプ"""
+    USER_REQUEST = "user_request"          # ユーザーリクエスト
+    DATA_PROCESSING = "data_processing"    # データ処理
+    API_CALL = "api_call"                  # API呼び出し
+    FILE_OPERATION = "file_operation"      # ファイル操作
+    VOICE_INTERACTION = "voice_interaction" # 音声対話
+    SYSTEM_TASK = "system_task"            # システムタスク
+    OTHER = "other"                        # その他
+
+
+class CapabilityEngine:
+    """
+    能力選択エンジン（シングルトン）
+    
+    コンテキストを分析し、ToolRegistryとPluginRegistryから
+    最適なツール・プラグインを選択して実行します。
+    """
+    
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __init__(self):
+        """初期化（直接呼び出し禁止、get_instance()を使用）"""
+        if CapabilityEngine._instance is not None:
+            raise RuntimeError("CapabilityEngineはシングルトンです。get_instance()を使用してください。")
+        
+        self._tool_registry = None
+        self._plugin_registry = None
+        self._context_history: List[Dict[str, Any]] = []
+        self._execution_stats: Dict[str, int] = {}
+    
+    @classmethod
+    def get_instance(cls) -> "CapabilityEngine":
+        """シングルトンインスタンス取得"""
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
+    
+    def set_tool_registry(self, tool_registry):
+        """
+        ToolRegistryを設定
+        
+        Args:
+            tool_registry: ToolRegistryインスタンス
+        """
+        self._tool_registry = tool_registry
+        print("✅ ToolRegistry 連携完了")
+    
+    def set_plugin_registry(self, plugin_registry):
+        """
+        PluginRegistryを設定
+        
+        Args:
+            plugin_registry: UniversalPluginRegistryインスタンス
+        """
+        self._plugin_registry = plugin_registry
+        print("✅ PluginRegistry 連携完了")
+    
+    def analyze_context(self, user_input: str, context_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        コンテキスト分析
+        
+        Args:
+            user_input (str): ユーザー入力
+            context_data (Optional[Dict[str, Any]]): 追加コンテキストデータ
+        
+        Returns:
+            Dict[str, Any]: 分析結果
+        """
+        analysis = {
+            "user_input": user_input,
+            "context_type": self._detect_context_type(user_input),
+            "keywords": self._extract_keywords(user_input),
+            "complexity": self._estimate_complexity(user_input),
+            "context_data": context_data or {}
+        }
+        
+        # 履歴に追加
+        self._context_history.append(analysis)
+        if len(self._context_history) > 100:
+            self._context_history.pop(0)
+        
+        return analysis
+    
+    def _detect_context_type(self, user_input: str) -> ContextType:
+        """コンテキストタイプ検出"""
+        input_lower = user_input.lower()
+        
+        if any(kw in input_lower for kw in ["ファイル", "保存", "読み込み", "file", "save", "load"]):
+            return ContextType.FILE_OPERATION
+        elif any(kw in input_lower for kw in ["api", "http", "リクエスト", "request"]):
+            return ContextType.API_CALL
+        elif any(kw in input_lower for kw in ["データ", "処理", "変換", "data", "process"]):
+            return ContextType.DATA_PROCESSING
+        elif any(kw in input_lower for kw in ["音声", "voice", "話す", "speak"]):
+            return ContextType.VOICE_INTERACTION
+        else:
+            return ContextType.USER_REQUEST
+    
+    def _extract_keywords(self, user_input: str) -> List[str]:
+        """キーワード抽出（簡易版）"""
+        keywords = []
+        input_lower = user_input.lower()
+        
+        keyword_map = {
+            "csv": ["csv"],
+            "json": ["json"],
+            "api": ["api"],
+            "file": ["ファイル", "file"],
+            "data": ["データ", "data"],
+            "voice": ["音声", "voice"],
+            "read": ["読み込み", "read"],
+            "write": ["書き込み", "write"],
+            "process": ["処理", "process"]
+        }
+        
+        for key, patterns in keyword_map.items():
+            if any(p in input_lower for p in patterns):
+                keywords.append(key)
+        
+        return keywords
+    
+    def _estimate_complexity(self, user_input: str) -> str:
+        """複雑度推定"""
+        if len(user_input) < 20:
+            return "simple"
+        elif len(user_input) < 100:
+            return "moderate"
+        else:
+            return "complex"
+    
+    def select_best_tool(self, context_analysis: Dict[str, Any]) -> Optional[str]:
+        """
+        最適ツール選択
+        
+        Args:
+            context_analysis (Dict[str, Any]): コンテキスト分析結果
+        
+        Returns:
+            Optional[str]: 選択されたツール名（見つからない場合はNone）
+        """
+        if self._tool_registry is None:
+            print("⚠️ ToolRegistryが設定されていません")
+            return None
+        
+        keywords = context_analysis.get("keywords", [])
+        
+        # キーワードベースでツール検索
+        candidates = []
+        for keyword in keywords:
+            tools = self._tool_registry.search_by_tag(keyword)
+            candidates.extend(tools)
+        
+        if not candidates:
+            return None
+        
+        # 優先度順にソート
+        candidates.sort(key=lambda t: t.priority)
+        
+        return candidates[0].name if candidates else None
+    
+    def select_best_plugin(self, context_analysis: Dict[str, Any]) -> Optional[str]:
+        """
+        最適プラグイン選択
+        
+        Args:
+            context_analysis (Dict[str, Any]): コンテキスト分析結果
+        
+        Returns:
+            Optional[str]: 選択されたプラグイン名（見つからない場合はNone）
+        """
+        if self._plugin_registry is None:
+            print("⚠️ PluginRegistryが設定されていません")
+            return None
+        
+        context_type = context_analysis.get("context_type")
+        
+        # コンテキストタイプに基づいてプラグイン検索
+        if context_type == ContextType.DATA_PROCESSING:
+            plugins = self._plugin_registry.get_plugins_by_type("data_processor")
+        elif context_type == ContextType.VOICE_INTERACTION:
+            plugins = self._plugin_registry.get_plugins_by_type("voice")
+        else:
+            return None
+        
+        if not plugins:
+            return None
+        
+        # 優先度順にソート
+        plugins.sort(key=lambda p: p.priority)
+        
+        return plugins[0].name if plugins else None
+    
+    def execute_capability(
+        self,
+        user_input: str,
+        context_data: Optional[Dict[str, Any]] = None,
+        **params
+    ) -> Dict[str, Any]:
+        """
+        能力実行（コンテキスト分析 → ツール/プラグイン選択 → 実行）
+        
+        Args:
+            user_input (str): ユーザー入力
+            context_data (Optional[Dict[str, Any]]): 追加コンテキストデータ
+            **params: 実行パラメータ
+        
+        Returns:
+            Dict[str, Any]: 実行結果
+        """
+        # 1. コンテキスト分析
+        analysis = self.analyze_context(user_input, context_data)
+        
+        # 2. ツール選択
+        tool_name = self.select_best_tool(analysis)
+        
+        # 3. プラグイン選択（ツールがない場合）
+        plugin_name = None
+        if tool_name is None:
+            plugin_name = self.select_best_plugin(analysis)
+        
+        # 4. 実行
+        result = {
+            "analysis": analysis,
+            "selected_tool": tool_name,
+            "selected_plugin": plugin_name,
+            "execution_result": None,
+            "success": False
+        }
+        
+        try:
+            if tool_name and self._tool_registry:
+                # ツール実行
+                result["execution_result"] = self._tool_registry.execute_tool(tool_name, **params)
+                result["success"] = True
+                self._update_stats(f"tool:{tool_name}")
+                
+            elif plugin_name and self._plugin_registry:
+                # プラグイン実行
+                plugin = self._plugin_registry.get_plugin(plugin_name)
+                if plugin:
+                    result["execution_result"] = plugin.execute(**params)
+                    result["success"] = True
+                    self._update_stats(f"plugin:{plugin_name}")
+            else:
+                result["execution_result"] = "適切なツール/プラグインが見つかりませんでした"
+                
+        except Exception as e:
+            result["execution_result"] = f"実行エラー: {e}"
+            result["success"] = False
+        
+        return result
+    
+    def _update_stats(self, capability_key: str):
+        """実行統計更新"""
+        self._execution_stats[capability_key] = self._execution_stats.get(capability_key, 0) + 1
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        統計情報取得
+        
+        Returns:
+            Dict[str, Any]: 統計情報
+        """
+        return {
+            "context_history_count": len(self._context_history),
+            "execution_stats": self._execution_stats.copy(),
+            "total_executions": sum(self._execution_stats.values())
+        }
+    
+    def print_status(self):
+        """状態表示"""
+        stats = self.get_statistics()
+        
+        print("\n" + "=" * 60)
+        print("🧠 Naviko Capability Engine Status")
+        print("=" * 60)
+        print(f"ToolRegistry: {'✅ 連携済み' if self._tool_registry else '❌ 未設定'}")
+        print(f"PluginRegistry: {'✅ 連携済み' if self._plugin_registry else '❌ 未設定'}")
+        print(f"コンテキスト履歴: {stats['context_history_count']} 件")
+        print(f"総実行回数: {stats['total_executions']} 回")
+        print()
+        
+        if stats["execution_stats"]:
+            print("実行統計:")
+            for key, count in sorted(stats["execution_stats"].items(), key=lambda x: x[1], reverse=True):
+                print(f"  {key}: {count}回")
+        
+        print("=" * 60)
+
+
+__version__ = "1.0.0"
+__author__ = "Naviko Development Team"
+__all__ = ["CapabilityEngine", "ContextType"]
