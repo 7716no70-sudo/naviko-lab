@@ -108,7 +108,7 @@ except ImportError:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VOSK_MODEL_SMALL = "vosk_models/vosk-model-small-ja-0.22"  # 小型モデル（40MB）
 VOSK_MODEL_LARGE = "vosk_models/vosk-model-ja-0.22"        # 大型モデル（1.8GB）
-CURRENT_VOSK_MODEL = VOSK_MODEL_SMALL  # デフォルトは小型モデル
+CURRENT_VOSK_MODEL = VOSK_MODEL_LARGE  # 大型モデルに変更
 
 # Phase 3モジュールインポート
 try:
@@ -279,6 +279,7 @@ class VoiceWakeWordDetector:
                         # 完全な文として認識された場合
                         result = json.loads(rec.Result())
                         text = result.get("text", "").lower()
+                        print(f"🎤 認識: [{text}]")  # デバッグ用
                         
                         # ウェイクワード検出
                         if self._detect_wake_word(text):
@@ -317,11 +318,11 @@ class VoiceWakeWordDetector:
         
     def _detect_wake_word(self, text):
         """
-        ウェイクワード検出
+        ウェイクワード検出（改善版）
         
         Args:
             text (str): 認識されたテキスト（小文字）
-            
+        
         Returns:
             bool: ウェイクワードが含まれているか
         """
@@ -329,21 +330,26 @@ class VoiceWakeWordDetector:
         if not text or len(text.strip()) == 0:
             return False
         
-        # 直接マッチ
+        # デバッグ用：認識テキストとウェイクワードリストを表示
+        # print(f"🔍 検出チェック: text=[{text}], wake_words={self.wake_words}")
+        
+        # 正規化：全角→半角、スペース削除
+        import unicodedata
+        normalized_text = unicodedata.normalize('NFKC', text).lower().replace(' ', '').replace('　', '')
+        
+        # 各ウェイクワードをチェック
         for wake_word in self.wake_words:
-            if wake_word in text:
+            normalized_wake = unicodedata.normalize('NFKC', wake_word).lower().replace(' ', '').replace('　', '')
+            
+            # 完全一致または部分一致
+            if normalized_wake in normalized_text:
+                print(f"✅ ウェイクワード一致: [{wake_word}] in [{text}]")
                 return True
-        
-        # "hey"+"ナビ子"の組み合わせ
-        greeting_words = ["hey", "ねぇ", "ねえ", "ね", "おい"]
-        has_greeting = any(g in text for g in greeting_words)
-        has_wake_word = any(w in text for w in self.wake_words)
-        
-        if has_greeting and has_wake_word:
-            return True
+            
+            # さらに柔軟な一致（漢字→ひらがな変換なし、音声認識結果そのまま）
+            # 例: "なびこ", "ナビコ", "naviko" などのバリエーション
         
         return False
-
 
 # ============================================================
 # End of VoiceWakeWordDetector
@@ -11039,7 +11045,7 @@ else:
 if VOSK_AVAILABLE:
     try:
         # Voskモデルパス（小型モデルをデフォルト使用）
-        vosk_model_path = Path("C:/vosk_models/vosk-model-small-ja-0.22")
+        vosk_model_path = Path(f"C:/{CURRENT_VOSK_MODEL}")
         
         if vosk_model_path.exists():
             # ウェイクワード検出時のコールバック関数
@@ -11066,18 +11072,20 @@ if VOSK_AVAILABLE:
                         print("⚠️ チャットウィンドウが見つかりません")
                     return  # ここで処理終了
 
-                # チャットウィンドウを表示
-                if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
-                    pet_vars["chat_win"].deiconify()  # ウィンドウを表示
-                    pet_vars["chat_win"].lift()  # 前面に持ってくる
-                    pet_vars["chat_win"].focus_force()  # フォーカスを当てる
-                    print("✅ チャットウィンドウを表示しました")
-                    
-                    # ナビ子のwaving状態に変更
-                    pet_vars["state"] = "waving"
-                    pet_vars["frame"] = 0
-                else:
-                    print("⚠️ チャットウィンドウが見つかりません")
+                # デスクトップマスコット（ナビ子キャラクター）を表示
+                root.deiconify()  # メインウィンドウを表示
+                root.state('normal')  # 通常状態に
+                root.lift()  # 前面に持ってくる
+                root.attributes('-topmost', True)  # 最前面に固定
+                root.focus_force()  # フォーカスを当てる
+                root.attributes('-topmost', False)  # 固定解除
+                
+                # ナビ子のwaving状態に変更
+                pet_vars["state"] = "waving"
+                pet_vars["frame"] = 0
+                
+                print("✅ デスクトップマスコット（ナビ子キャラクター）を表示しました")
+                print("   ※マスターチャットは非表示のまま（返答専用ウィンドウは③-2で実装予定）")
             
             # VoiceWakeWordDetector初期化
             voice_detector = VoiceWakeWordDetector(
@@ -11090,7 +11098,7 @@ if VOSK_AVAILABLE:
             
             print("✅ Vosk音声起動システム開始")
             print("   - ウェイクワード: 'hey、ナビ子' または 'ナビ子'")
-            print("   - モデル: 小型（vosk-model-small-ja-0.22）")
+            print(f"   - モデル: {CURRENT_VOSK_MODEL}")
         else:
             print(f"⚠️ Voskモデルが見つかりません: {vosk_model_path}")
             print("   音声起動機能は無効です")

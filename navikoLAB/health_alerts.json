@@ -1,18 +1,42 @@
 [
   {
-    "level": "CRITICAL",
-    "category": "ERROR_RATE",
-    "message": "エラー率が危険レベル: 25.0%",
-    "threshold": 10.0,
-    "current_value": 25.0,
-    "timestamp": "2026-07-05T10:52:31.137721"
+    "level": "WARNING",
+    "category": "DISK",
+    "message": "ディスク使用率が高い: 83.2%",
+    "threshold": 80.0,
+    "current_value": 83.2,
+    "timestamp": "2026-07-09T01:22:56.205721"
   },
   {
-    "level": "CRITICAL",
-    "category": "ERROR_RATE",
-    "message": "エラー率が危険レベル: 40.0%",
-    "threshold": 10.0,
-    "current_value": 40.0,
-    "timestamp": "2026-07-05T10:52:31.241912"
+    "level": "WARNING",
+    "category": "DISK",
+    "message": "ディスク使用率が高い: 83.2%",
+    "threshold": 80.0,
+    "current_value": 83.2,
+    "timestamp": "2026-07-09T01:23:01.309526"
+  },
+  {
+    "level": "WARNING",
+    "category": "DISK",
+    "message": "ディスク使用率が高い: 83.2%",
+    "threshold": 80.0,
+    "current_value": 83.2,
+    "timestamp": "2026-07-09T01:23:06.410821"
+  },
+  {
+    "level": "WARNING",
+    "category": "DISK",
+    "message": "ディスク使用率が高い: 83.2%",
+    "threshold": 80.0,
+    "current_value": 83.2,
+    "timestamp": "2026-07-09T01:23:11.512919"
+  },
+  {
+    "level": "WARNING",
+    "category": "DISK",
+    "message": "ディスク使用率が高い: 83.2%",
+    "threshold": 80.0,
+    "current_value": 83.2,
+    "timestamp": "2026-07-09T01:23:13.005193"
   }
 ]
