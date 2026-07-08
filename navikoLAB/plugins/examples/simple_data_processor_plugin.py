@@ -8,14 +8,8 @@ Author: Naviko Development Team
 Date: 2026-07-08
 """
 
-import sys
-from pathlib import Path
-
-# プラグインシステムをインポートできるようにパスを追加
-naviko_root = Path(__file__).resolve().parents[3]  # naviko-lab/
-if str(naviko_root) not in sys.path:
-    sys.path.insert(0, str(naviko_root))
-
+# プラグインシステムのインポート
+# 注: sys.pathはplugin_loader.pyで自動設定されます
 from navikoLAB.plugin_system import BasePlugin, PluginStatus
 
 

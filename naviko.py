@@ -68,6 +68,18 @@ from navikoLAB.error_diagnostic_engine import ErrorDiagnosticEngine
 from navikoLAB.experience_memory import ExperienceMemory
 from navikoLAB.process_recorder import ProcessRecorder
 
+# === Plugin System import ===
+try:
+    from navikoLAB.plugin_system.plugin_loader import PluginLoader
+    from navikoLAB.plugin_system.universal_plugin_registry import UniversalPluginRegistry
+    PLUGIN_SYSTEM_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ プラグインシステムが見つかりません: {e}")
+    PLUGIN_SYSTEM_AVAILABLE = False
+    PluginLoader = None
+    UniversalPluginRegistry = None
+# === Plugin System import end ===
+
 # === Vosk音声認識インポート ===
 try:
     import vosk
@@ -10879,6 +10891,41 @@ if pet_vars.get("chat_win") and pet_vars["chat_win"].winfo_exists():
     print(f"   - ステータス: バックグラウンド待機中")
 else:
     print("⚠️ バックグラウンドチャット作成失敗")
+
+
+# ============================================================
+# Plugin System 初期化
+# ============================================================
+
+if PLUGIN_SYSTEM_AVAILABLE:
+    try:
+        print("🔄 プラグインシステムを初期化中...")
+        
+        # PluginLoader初期化
+        plugin_loader = PluginLoader()
+        
+        # プラグインディレクトリから自動検出・ロード
+        plugins_dir = Path("navikoLAB/plugins")
+        if plugins_dir.exists():
+            loaded_plugins = plugin_loader.load_plugins_from_directory(
+                str(plugins_dir),
+                recursive=True,
+                auto_initialize=True
+            )
+            
+            # レジストリから状態表示
+            registry = UniversalPluginRegistry.get_instance()
+            registry.print_status()
+            
+            print(f"✅ プラグインシステム初期化完了（{len(loaded_plugins)}個のプラグインをロード）")
+        else:
+            print(f"⚠️ プラグインディレクトリが見つかりません: {plugins_dir}")
+    except Exception as e:
+        print(f"❌ プラグインシステムの初期化に失敗: {e}")
+        import traceback
+        traceback.print_exc()
+else:
+    print("⚠️ プラグインシステムが利用できません")
 
 
 # ============================================================

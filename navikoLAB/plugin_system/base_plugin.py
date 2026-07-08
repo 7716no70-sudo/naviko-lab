@@ -76,6 +76,11 @@ class BasePlugin(ABC):
         self._config: Dict[str, Any] = {}
         self._error_message: Optional[str] = None
     
+    @property
+    def status(self) -> PluginStatus:
+        """プラグインの現在状態を取得"""
+        return self._status
+    
     @abstractmethod
     def initialize(self, config: Dict[str, Any]) -> bool:
         """

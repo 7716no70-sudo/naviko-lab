@@ -137,6 +137,12 @@ class PluginLoader:
             Optional[object]: ロードされたモジュール（失敗時は None）
         """
         try:
+            # naviko-labのルートディレクトリをsys.pathに追加
+            # プラグインファイルが navikoLAB.plugin_system をインポートできるようにする
+            naviko_root = file_path.resolve().parents[3]  # naviko-lab/
+            if str(naviko_root) not in sys.path:
+                sys.path.insert(0, str(naviko_root))
+            
             module_name = file_path.stem
             spec = importlib.util.spec_from_file_location(module_name, file_path)
             
