@@ -107,32 +107,3 @@ class SimpleVoicePlugin(BasePlugin):
             },
             'tags': ['voice', 'tts', 'sample']
         }
-
-    def provide_tools(self):
-        """
-        プラグインが提供するツールの定義
-        
-        Returns:
-            List[Dict[str, Any]]: ツール定義のリスト
-        """
-        from navikoLAB.tool_system import ToolMetadata, ToolCategory, ToolComplexity
-        
-        def synthesize_voice(text: str, speed: float = 1.0) -> str:
-            """テキストから音声を合成"""
-            return self.execute(text=text, speed=speed)
-        
-        metadata = ToolMetadata(
-            name="voice_synthesize",
-            version="1.0.0",
-            category=ToolCategory.VOICE_PROCESSING,
-            description="テキストから音声を合成するツール",
-            complexity=ToolComplexity.SIMPLE,
-            required_params=["text"],
-            optional_params=["speed"],
-            return_type="str",
-            tags=["voice", "tts", "synthesize"],
-            author="Naviko Team",
-            priority=10
-        )
-        
-        return [{'metadata': metadata, 'function': synthesize_voice}]

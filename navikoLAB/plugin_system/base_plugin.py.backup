@@ -269,49 +269,6 @@ class BasePlugin(ABC):
         if self._status == PluginStatus.DISABLED:
             self._status = PluginStatus.READY
     
-    
-    def provide_tools(self) -> List[Dict[str, Any]]:
-        """
-        プラグインが提供するツールの定義
-        
-        プラグインは必要に応じてこのメソッドをオーバーライドし、
-        提供するツールのリストを返してください。
-        
-        Returns:
-            List[Dict[str, Any]]: ツール定義のリスト
-                各ツール定義は以下の構造:
-                {
-                    'metadata': ToolMetadata,  # ツールメタデータ
-                    'function': Callable       # ツール実行関数
-                }
-        
-        Example:
-            def provide_tools(self) -> List[Dict[str, Any]]:
-                from navikoLAB.tool_system import ToolMetadata, ToolCategory, ToolComplexity
-                
-                def synthesize_voice(text: str, speed: float = 1.0) -> str:
-                    return self.execute(text=text, speed=speed)
-                
-                metadata = ToolMetadata(
-                    name="voice_synthesize",
-                    version="1.0.0",
-                    category=ToolCategory.VOICE_PROCESSING,
-                    description="テキストから音声を合成",
-                    complexity=ToolComplexity.SIMPLE,
-                    required_params=["text"],
-                    optional_params=["speed"],
-                    return_type="str",
-                    tags=["voice", "tts"]
-                )
-                
-                return [{'metadata': metadata, 'function': synthesize_voice}]
-        
-        Note:
-            デフォルト実装では空リストを返します。
-            ツールを提供しないプラグインはオーバーライド不要です。
-        """
-        return []
-    
     def __str__(self) -> str:
         """文字列表現"""
         metadata = self.get_metadata()
